@@ -8,10 +8,14 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 interface TaskBreakdownResponse {
   tasks: {
     title: string;
+    estimatedMinutes: number;
+    complexity: 'low' | 'medium' | 'high';
     subtasks?: {
       title: string;
+      estimatedMinutes: number;
     }[];
   }[];
+  totalEstimatedMinutes: number;
 }
 
 export async function breakdownGoal(goalTitle: string): Promise<Task[]> {

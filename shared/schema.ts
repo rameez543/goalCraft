@@ -6,6 +6,7 @@ export const subtasks = z.object({
   id: z.string(),
   title: z.string(),
   completed: z.boolean().default(false),
+  estimatedMinutes: z.number().optional(),
 });
 
 export type Subtask = z.infer<typeof subtasks>;
@@ -15,6 +16,8 @@ export const tasks = z.object({
   title: z.string(),
   completed: z.boolean().default(false),
   subtasks: z.array(subtasks).default([]),
+  estimatedMinutes: z.number().optional(),
+  complexity: z.enum(['low', 'medium', 'high']).optional(),
 });
 
 export type Task = z.infer<typeof tasks>;
@@ -50,6 +53,9 @@ export const goals = pgTable("goals", {
   progress: integer("progress").default(0),
   tasks: jsonb("tasks").notNull().$type<Task[]>(),
   createdAt: text("created_at").notNull(),  // Changed to text for compatibility
+  totalEstimatedMinutes: integer("total_estimated_minutes"),
+  timeConstraintMinutes: integer("time_constraint_minutes"),
+  additionalInfo: text("additional_info"),
 });
 
 export const insertGoalSchema = createInsertSchema(goals).omit({
@@ -62,6 +68,8 @@ export type Goal = typeof goals.$inferSelect;
 // API schema for goal creation
 export const createGoalSchema = z.object({
   title: z.string().min(3, "Goal must be at least 3 characters"),
+  timeConstraintMinutes: z.number().optional(),
+  additionalInfo: z.string().optional(),
 });
 
 export type CreateGoalRequest = z.infer<typeof createGoalSchema>;

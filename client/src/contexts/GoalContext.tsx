@@ -4,6 +4,7 @@ import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Goal, GoalContextType } from '../types';
 import { saveGoalsToLocalStorage, getGoalsFromLocalStorage } from '../lib/localStorage';
+import { useAuth } from './AuthContext';
 
 const GoalContext = createContext<GoalContextType | undefined>(undefined);
 
@@ -12,8 +13,9 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
 
-  // Fetch goals on initial load
+  // Fetch goals on initial load or when authentication state changes
   useEffect(() => {
     const fetchGoals = async () => {
       try {
@@ -46,7 +48,7 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     fetchGoals();
-  }, []);
+  }, [isAuthenticated, user]);
 
   // Save goals to localStorage whenever they change
   useEffect(() => {
@@ -59,6 +61,16 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setLoading(true);
       setError(null);
+      
+      if (!isAuthenticated) {
+        toast({
+          variant: 'destructive',
+          title: 'Authentication Required',
+          description: 'Please sign in to create a goal.',
+        });
+        setLoading(false);
+        return;
+      }
       
       const response = await apiRequest('POST', '/api/goals', { title });
       const newGoal = await response.json();

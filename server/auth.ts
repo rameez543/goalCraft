@@ -8,11 +8,11 @@ import ws from 'ws';
 import { z } from 'zod';
 import { fromZodError } from 'zod-validation-error';
 import { type User } from '@shared/schema';
+import connectPgSimple from 'connect-pg-simple';
 
 neonConfig.webSocketConstructor = ws;
 
 // Set up PostgreSQL session store
-const connectPgSimple = require('connect-pg-simple');
 const PgStore = connectPgSimple(session);
 
 // Configure passport to use Google OAuth2

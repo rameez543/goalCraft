@@ -16,11 +16,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use OpenAI to break down the goal into tasks
       const tasks = await breakdownGoal(validatedData.title);
       
-      // Create and store the goal
+      // Create and store the goal with user info if available
+      const userId = req.isAuthenticated() && req.user 
+        ? (req.user as any).username || "anonymous"
+        : "anonymous";
+      
       const goal = await storage.createGoal({
         title: validatedData.title,
         tasks,
-        userId: "anonymous", // Default user ID until we implement authentication
+        userId,
         createdAt: new Date().toISOString(),
         progress: 0
       });
@@ -41,9 +45,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all goals
-  app.get("/api/goals", async (_req: Request, res: Response) => {
+  app.get("/api/goals", async (req: Request, res: Response) => {
     try {
-      const goals = await storage.getGoals();
+      // If user is authenticated, filter goals by userId
+      let goals;
+      
+      if (req.isAuthenticated() && req.user) {
+        const userId = (req.user as any).username || "anonymous";
+        goals = await storage.getGoals(userId);
+      } else {
+        // Return empty array if not authenticated
+        goals = [];
+      }
+      
       res.json(goals);
     } catch (error) {
       console.error("Error fetching goals:", error);

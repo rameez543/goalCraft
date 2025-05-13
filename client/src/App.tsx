@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import { GoalProvider } from "./contexts/GoalContext";
+import { AuthProvider } from "./contexts/AuthContext";
 
 function Router() {
   return (
@@ -21,10 +22,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <GoalProvider>
-          <Toaster />
-          <Router />
-        </GoalProvider>
+        <AuthProvider>
+          <GoalProvider>
+            <Toaster />
+            <Router />
+          </GoalProvider>
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
