@@ -22,13 +22,21 @@ export type Task = z.infer<typeof tasks>;
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  email: text("email").notNull().unique(),
+  password: text("password"),
+  googleId: text("google_id").unique(),
+  displayName: text("display_name"),
+  profilePicture: text("profile_picture"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
+  email: true,
   password: true,
+  googleId: true,
+  displayName: true,
+  profilePicture: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
