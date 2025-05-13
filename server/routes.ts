@@ -13,8 +13,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate request body
       const validatedData = createGoalSchema.parse(req.body);
       
-      // Use OpenAI to break down the goal into tasks
-      const tasks = await breakdownGoal(validatedData.title);
+      // Use OpenAI to break down the goal into tasks with time estimates
+      const { tasks, totalEstimatedMinutes } = await breakdownGoal(
+        validatedData.title,
+        validatedData.timeConstraintMinutes,
+        validatedData.additionalInfo
+      );
       
       // Create and store the goal with user info if available
       const userId = req.isAuthenticated() && req.user 
@@ -26,7 +30,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tasks,
         userId,
         createdAt: new Date().toISOString(),
-        progress: 0
+        progress: 0,
+        totalEstimatedMinutes,
+        timeConstraintMinutes: validatedData.timeConstraintMinutes,
+        additionalInfo: validatedData.additionalInfo
       });
       
       res.status(201).json(goal);

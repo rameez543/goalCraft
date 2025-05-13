@@ -57,7 +57,11 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [goals]);
 
-  const createGoal = async (title: string): Promise<void> => {
+  const createGoal = async (
+    title: string,
+    timeConstraintMinutes?: number,
+    additionalInfo?: string
+  ): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
@@ -72,13 +76,18 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
       }
       
-      const response = await apiRequest('POST', '/api/goals', { title });
+      const response = await apiRequest('POST', '/api/goals', {
+        title,
+        timeConstraintMinutes,
+        additionalInfo
+      });
+      
       const newGoal = await response.json();
       
       setGoals(prevGoals => [...prevGoals, newGoal]);
       toast({
         title: 'Goal created',
-        description: 'Your goal has been broken down into tasks.',
+        description: 'Your goal has been broken down into tasks with time estimates.',
       });
     } catch (err) {
       setError('Failed to create goal. Please try again.');

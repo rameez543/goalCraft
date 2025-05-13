@@ -3,11 +3,19 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Switch } from '@/components/ui/switch';
 import { useGoals } from '../contexts/GoalContext';
 import { useToast } from '@/hooks/use-toast';
 
 const TaskInputForm: React.FC = () => {
   const [goalInput, setGoalInput] = useState('');
+  const [additionalInfo, setAdditionalInfo] = useState('');
+  const [hasTimeConstraint, setHasTimeConstraint] = useState(false);
+  const [timeConstraintMinutes, setTimeConstraintMinutes] = useState<number | undefined>(undefined);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  
   const { createGoal, loading } = useGoals();
   const { toast } = useToast();
 
@@ -24,8 +32,25 @@ const TaskInputForm: React.FC = () => {
     }
 
     try {
-      await createGoal(goalInput);
-      setGoalInput(''); // Clear the input after successful submission
+      // Prepare the data including the optional fields
+      const goalData = {
+        title: goalInput,
+        additionalInfo: additionalInfo.trim() || undefined,
+        timeConstraintMinutes: hasTimeConstraint ? timeConstraintMinutes : undefined
+      };
+      
+      await createGoal(
+        goalData.title,
+        goalData.timeConstraintMinutes,
+        goalData.additionalInfo
+      );
+      
+      // Clear the input after successful submission
+      setGoalInput(''); 
+      setAdditionalInfo('');
+      setTimeConstraintMinutes(undefined);
+      setHasTimeConstraint(false);
+      setShowAdvancedOptions(false);
     } catch (error) {
       console.error('Error submitting goal:', error);
     }
@@ -51,6 +76,76 @@ const TaskInputForm: React.FC = () => {
                 disabled={loading}
               />
             </div>
+            
+            <Accordion
+              type="single"
+              collapsible
+              className="w-full"
+              value={showAdvancedOptions ? "advanced-options" : undefined}
+              onValueChange={(value) => setShowAdvancedOptions(value === "advanced-options")}
+            >
+              <AccordionItem value="advanced-options" className="border-b-0">
+                <AccordionTrigger className="text-sm font-medium text-gray-700 hover:text-primary py-2">
+                  Advanced Options
+                </AccordionTrigger>
+                <AccordionContent className="space-y-4 pt-2">
+                  {/* Time Constraints */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="time-constraint"
+                        checked={hasTimeConstraint}
+                        onCheckedChange={setHasTimeConstraint}
+                      />
+                      <Label htmlFor="time-constraint" className="text-sm font-medium text-gray-700">
+                        Set time constraint
+                      </Label>
+                    </div>
+                  </div>
+                  
+                  {hasTimeConstraint && (
+                    <div className="pl-8">
+                      <Label htmlFor="time-minutes" className="text-sm font-medium text-gray-700 mb-1 block">
+                        Total available time (minutes)
+                      </Label>
+                      <Input
+                        id="time-minutes"
+                        type="number"
+                        min="1"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary focus:border-primary"
+                        placeholder="e.g., 60 for 1 hour, 120 for 2 hours"
+                        value={timeConstraintMinutes || ''}
+                        onChange={(e) => setTimeConstraintMinutes(e.target.value ? parseInt(e.target.value) : undefined)}
+                        disabled={loading}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        We'll optimize your tasks to fit within this timeframe
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Additional Information */}
+                  <div>
+                    <Label htmlFor="additional-info" className="text-sm font-medium text-gray-700 mb-1 block">
+                      Additional Information
+                    </Label>
+                    <Textarea
+                      id="additional-info"
+                      rows={3}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary focus:border-primary"
+                      placeholder="Add more context or specific details that might help break down this goal more accurately..."
+                      value={additionalInfo}
+                      onChange={(e) => setAdditionalInfo(e.target.value)}
+                      disabled={loading}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      For complex goals, adding more details helps create a better task breakdown
+                    </p>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+            
             <div className="pt-2">
               <Button
                 type="submit"
@@ -74,7 +169,7 @@ const TaskInputForm: React.FC = () => {
                 Break It Down
               </Button>
               <p className="text-xs text-gray-500 mt-2">
-                Our AI will analyze your goal and break it down into manageable tasks.
+                Our AI will analyze your goal and break it down into manageable tasks with time estimates.
               </p>
             </div>
           </div>
