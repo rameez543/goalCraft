@@ -24,14 +24,37 @@ const SubtaskItem: React.FC<SubtaskItemProps> = ({ subtask, taskId, goalId, onTo
           className="w-4 h-4 border-2 border-gray-300 rounded data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
         />
       </div>
-      <label
-        htmlFor={`subtask-${subtask.id}`}
-        className={`text-gray-700 cursor-pointer flex-grow ${
-          subtask.completed ? 'line-through text-gray-400' : ''
-        }`}
-      >
-        {subtask.title}
-      </label>
+      <div className="flex flex-col flex-grow">
+        <label
+          htmlFor={`subtask-${subtask.id}`}
+          className={`text-gray-700 cursor-pointer ${
+            subtask.completed ? 'line-through text-gray-400' : ''
+          }`}
+        >
+          {subtask.title}
+        </label>
+        
+        {/* Time estimate for subtask */}
+        {subtask.estimatedMinutes && (
+          <span className="flex items-center text-blue-600 text-xs mt-0.5">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-3 w-3 mr-1" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
+              />
+            </svg>
+            {subtask.estimatedMinutes} min
+          </span>
+        )}
+      </div>
       <div className="opacity-0 group-hover:opacity-100 transition-opacity">
         <button className="p-1 text-gray-400 hover:text-gray-700 rounded">
           <svg

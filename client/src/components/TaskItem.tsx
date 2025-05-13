@@ -32,14 +32,49 @@ const TaskItem: React.FC<TaskItemProps> = ({
           />
         </div>
         <div className="flex-grow">
-          <label
-            htmlFor={`task-${task.id}`}
-            className={`text-base text-gray-800 cursor-pointer ${
-              task.completed ? 'line-through text-gray-400' : ''
-            }`}
-          >
-            {task.title}
-          </label>
+          <div className="flex flex-col">
+            <label
+              htmlFor={`task-${task.id}`}
+              className={`text-base text-gray-800 cursor-pointer ${
+                task.completed ? 'line-through text-gray-400' : ''
+              }`}
+            >
+              {task.title}
+            </label>
+            
+            {/* Time and Complexity Information */}
+            <div className="flex items-center space-x-3 mt-1 text-xs">
+              {task.estimatedMinutes && (
+                <span className="flex items-center text-blue-600">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-4 w-4 mr-1" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
+                    />
+                  </svg>
+                  {task.estimatedMinutes} min
+                </span>
+              )}
+              
+              {task.complexity && (
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                  task.complexity === 'low' ? 'bg-green-100 text-green-800' :
+                  task.complexity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {task.complexity} complexity
+                </span>
+              )}
+            </div>
+          </div>
 
           {/* Subtasks if any */}
           {task.subtasks && task.subtasks.length > 0 && (

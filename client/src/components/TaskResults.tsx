@@ -37,6 +37,49 @@ const TaskResults: React.FC<TaskResultsProps> = ({
               <Progress value={goal.progress} className="w-32 h-1.5 mr-2" />
               <span className="text-xs text-gray-500">{goal.progress}% complete</span>
             </div>
+            
+            {/* Display time estimates and constraints */}
+            <div className="flex flex-wrap items-center mt-2 gap-2">
+              {goal.totalEstimatedMinutes && (
+                <div className="flex items-center text-blue-600 text-xs">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-4 w-4 mr-1" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
+                    />
+                  </svg>
+                  <span>Total: {goal.totalEstimatedMinutes} min</span>
+                </div>
+              )}
+              
+              {goal.timeConstraintMinutes && (
+                <div className="flex items-center text-purple-600 text-xs">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-4 w-4 mr-1" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
+                    />
+                  </svg>
+                  <span>Time Constraint: {goal.timeConstraintMinutes} min</span>
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex space-x-2">
             <Button
@@ -87,6 +130,14 @@ const TaskResults: React.FC<TaskResultsProps> = ({
       </div>
 
       <CardContent className="p-5">
+        {/* Display additional information if available */}
+        {goal.additionalInfo && (
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
+            <h4 className="text-sm font-medium text-gray-700 mb-1">Additional Information:</h4>
+            <p className="text-sm text-gray-600">{goal.additionalInfo}</p>
+          </div>
+        )}
+        
         <ul className="space-y-3">
           {goal.tasks.map((task) => (
             <TaskItem
