@@ -1,5 +1,7 @@
 import { goals, type Goal, type InsertGoal, type Task, type Subtask, users, type User, type InsertUser } from "@shared/schema";
 import { nanoid } from "nanoid";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -16,68 +18,71 @@ export interface IStorage {
   updateSubtaskCompletion(goalId: number, taskId: string, subtaskId: string, completed: boolean): Promise<Goal | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private goalsData: Map<number, Goal>;
-  private userCurrentId: number;
-  private goalCurrentId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.goalsData = new Map();
-    this.userCurrentId = 1;
-    this.goalCurrentId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userCurrentId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
 
   async getGoals(): Promise<Goal[]> {
-    return Array.from(this.goalsData.values());
+    return await db.select().from(goals);
   }
 
   async getGoal(id: number): Promise<Goal | undefined> {
-    return this.goalsData.get(id);
+    const [goal] = await db.select().from(goals).where(eq(goals.id, id));
+    return goal || undefined;
   }
 
   async createGoal(insertGoal: InsertGoal): Promise<Goal> {
-    const id = this.goalCurrentId++;
-    const goal: Goal = { ...insertGoal, id };
-    this.goalsData.set(id, goal);
+    // Remove any existing createdAt field to avoid conflicts
+    const { createdAt, ...insertData } = insertGoal as any;
+    
+    const [goal] = await db
+      .insert(goals)
+      .values({
+        ...insertData,
+        createdAt: new Date().toISOString() // Ensure we have a date
+      })
+      .returning();
     return goal;
   }
 
   async updateGoal(id: number, updates: Partial<Goal>): Promise<Goal | undefined> {
-    const goal = this.goalsData.get(id);
-    if (!goal) return undefined;
-
-    const updatedGoal = { ...goal, ...updates };
-    this.goalsData.set(id, updatedGoal);
-    return updatedGoal;
+    const [updatedGoal] = await db
+      .update(goals)
+      .set(updates)
+      .where(eq(goals.id, id))
+      .returning();
+    return updatedGoal || undefined;
   }
 
   async deleteGoal(id: number): Promise<boolean> {
-    return this.goalsData.delete(id);
+    const [deletedGoal] = await db
+      .delete(goals)
+      .where(eq(goals.id, id))
+      .returning({ id: goals.id });
+    return !!deletedGoal;
   }
 
   async updateTaskCompletion(goalId: number, taskId: string, completed: boolean): Promise<Goal | undefined> {
-    const goal = this.goalsData.get(goalId);
+    // First get the goal
+    const goal = await this.getGoal(goalId);
     if (!goal) return undefined;
 
+    // Update the tasks array
     const updatedTasks = goal.tasks.map(task => {
       if (task.id === taskId) {
         return { ...task, completed };
@@ -90,20 +95,25 @@ export class MemStorage implements IStorage {
     const completedTasks = updatedTasks.filter(task => task.completed).length;
     const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-    const updatedGoal = { 
-      ...goal, 
-      tasks: updatedTasks,
-      progress 
-    };
-    
-    this.goalsData.set(goalId, updatedGoal);
-    return updatedGoal;
+    // Update the goal in the database
+    const [updatedGoal] = await db
+      .update(goals)
+      .set({
+        tasks: updatedTasks,
+        progress
+      })
+      .where(eq(goals.id, goalId))
+      .returning();
+
+    return updatedGoal || undefined;
   }
 
   async updateSubtaskCompletion(goalId: number, taskId: string, subtaskId: string, completed: boolean): Promise<Goal | undefined> {
-    const goal = this.goalsData.get(goalId);
+    // First get the goal
+    const goal = await this.getGoal(goalId);
     if (!goal) return undefined;
 
+    // Update the tasks and subtasks
     const updatedTasks = goal.tasks.map(task => {
       if (task.id === taskId) {
         const updatedSubtasks = task.subtasks.map(subtask => {
@@ -130,15 +140,18 @@ export class MemStorage implements IStorage {
     const completedTasks = updatedTasks.filter(task => task.completed).length;
     const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-    const updatedGoal = { 
-      ...goal, 
-      tasks: updatedTasks,
-      progress
-    };
-    
-    this.goalsData.set(goalId, updatedGoal);
-    return updatedGoal;
+    // Update the goal in the database
+    const [updatedGoal] = await db
+      .update(goals)
+      .set({
+        tasks: updatedTasks,
+        progress
+      })
+      .where(eq(goals.id, goalId))
+      .returning();
+
+    return updatedGoal || undefined;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

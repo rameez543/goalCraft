@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -19,26 +19,11 @@ export const tasks = z.object({
 
 export type Task = z.infer<typeof tasks>;
 
-export const goals = pgTable("goals", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  userId: text("user_id").default("anonymous"),
-  progress: integer("progress").default(0),
-  tasks: jsonb("tasks").notNull().$type<Task[]>(),
-  createdAt: text("created_at").notNull(),
-});
-
-export const insertGoalSchema = createInsertSchema(goals).omit({
-  id: true,
-});
-
-export type InsertGoal = z.infer<typeof insertGoalSchema>;
-export type Goal = typeof goals.$inferSelect;
-
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -48,6 +33,23 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+// Goals table
+export const goals = pgTable("goals", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  userId: text("user_id").default("anonymous"),
+  progress: integer("progress").default(0),
+  tasks: jsonb("tasks").notNull().$type<Task[]>(),
+  createdAt: text("created_at").notNull(),  // Changed to text for compatibility
+});
+
+export const insertGoalSchema = createInsertSchema(goals).omit({
+  id: true,
+});
+
+export type InsertGoal = z.infer<typeof insertGoalSchema>;
+export type Goal = typeof goals.$inferSelect;
 
 // API schema for goal creation
 export const createGoalSchema = z.object({
