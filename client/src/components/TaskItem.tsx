@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import SubtaskItem from './SubtaskItem';
-import { Task } from '../types';
+import { Task, ReminderFrequency } from '../types';
 import { format } from 'date-fns';
 import { TaskScheduler } from './TaskScheduler';
 import { 
@@ -27,6 +27,7 @@ interface TaskItemProps {
       reminderTime?: string;
       enableWhatsapp?: boolean;
       whatsappNumber?: string;
+      reminderFrequency?: ReminderFrequency;
     }
   ) => Promise<void>;
   onUpdateSubtaskSchedule?: (

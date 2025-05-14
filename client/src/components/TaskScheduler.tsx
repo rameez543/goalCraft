@@ -217,34 +217,60 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
         </div>
         
         {enableWhatsapp && (
-          <div className="space-y-2">
-            <Label htmlFor="whatsapp-number" className="text-sm font-medium">
-              WhatsApp Number
-            </Label>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                id="whatsapp-number"
-                type="tel"
-                inputMode="tel"
-                placeholder="+1 (555) 555-5555"
-                value={whatsappNumber}
-                onChange={handleWhatsappNumberChange}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              />
-              <Button 
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleSaveWhatsappNumber}
-                className="whitespace-nowrap sm:w-auto w-full"
-              >
-                Save Number
-              </Button>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp-number" className="text-sm font-medium">
+                WhatsApp Number
+              </Label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  id="whatsapp-number"
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="+1 (555) 555-5555"
+                  value={whatsappNumber}
+                  onChange={handleWhatsappNumberChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                />
+                <Button 
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSaveWhatsappNumber}
+                  className="whitespace-nowrap sm:w-auto w-full"
+                >
+                  Save Number
+                </Button>
+              </div>
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="reminder-frequency" className="text-sm font-medium">
+                Notification Frequency
+              </Label>
+              <Select 
+                value={reminderFrequency}
+                onValueChange={handleReminderFrequencyChange}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select frequency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily Summary</SelectItem>
+                  <SelectItem value="weekly">Weekly Summary</SelectItem>
+                  <SelectItem value="task-only">Task Due Dates Only</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                Choose how often to receive WhatsApp notifications
+              </p>
+            </div>
+            
             {whatsappSaved && (
               <p className="text-xs text-green-600 flex items-center mt-1">
                 <span className="mr-1">✓</span> 
-                WhatsApp notifications enabled for this task
+                WhatsApp notifications enabled: {reminderFrequency === 'task-only' ? 'Due date alerts only' : 
+                  reminderFrequency === 'daily' ? 'Daily summaries' : 'Weekly summaries'}
               </p>
             )}
           </div>

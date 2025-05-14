@@ -100,6 +100,7 @@ export type GoalContextType = {
       reminderTime?: string;
       enableWhatsapp?: boolean;
       whatsappNumber?: string;
+      reminderFrequency?: ReminderFrequency;
     }
   ) => Promise<void>;
   updateSubtaskSchedule: (

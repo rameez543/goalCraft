@@ -336,6 +336,9 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       addedToCalendar?: boolean;
       reminderEnabled?: boolean;
       reminderTime?: string;
+      enableWhatsapp?: boolean;
+      whatsappNumber?: string;
+      reminderFrequency?: ReminderFrequency;
     }
   ): Promise<void> => {
     try {
