@@ -89,13 +89,13 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
   return (
     <li className="group">
-      <div className="flex items-start gap-2 md:gap-3 p-2 hover:bg-gray-50 rounded-lg">
+      <div className="flex items-start gap-2 p-3 hover:bg-blue-50 rounded-lg transition-colors mb-2">
         <div className="flex-shrink-0 mt-0.5">
           <Checkbox
             id={`task-${task.id}`}
             checked={task.completed}
             onCheckedChange={handleToggle}
-            className="w-5 h-5 border-2 border-gray-300 rounded data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+            className="w-5 h-5 border-2 border-blue-300 rounded data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
           />
         </div>
         <div className="flex-grow min-w-0">
@@ -103,37 +103,24 @@ const TaskItem: React.FC<TaskItemProps> = ({
             <div className="flex justify-between items-start gap-2">
               <label
                 htmlFor={`task-${task.id}`}
-                className={`text-base text-gray-800 cursor-pointer break-words ${
-                  task.completed ? 'line-through text-gray-400' : ''
+                className={`text-base font-medium cursor-pointer break-words ${
+                  task.completed ? 'line-through text-gray-400' : 'text-gray-800'
                 }`}
               >
                 {task.title}
               </label>
               
-              {/* Actions for mobile - always visible */}
-              <div className="flex-shrink-0 md:hidden flex items-center space-x-1">
+              {/* Actions - simplified and always visible */}
+              <div className="flex-shrink-0 flex items-center space-x-1">
                 <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
                   <DialogTrigger asChild>
-                    <button className="p-1 text-gray-500 hover:text-purple-600 rounded" title="Schedule Task">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
+                    <button className="p-1 text-gray-500 hover:text-blue-600 rounded-full bg-gray-50 hover:bg-blue-50 w-8 h-8 flex items-center justify-center transition-colors" title="Schedule Task">
+                      <span className="text-lg">📅</span>
                     </button>
                   </DialogTrigger>
                   <DialogContent className="w-[90vw] md:max-w-md">
                     <DialogHeader>
-                      <DialogTitle>Schedule Task</DialogTitle>
+                      <DialogTitle>📅 Schedule Task</DialogTitle>
                     </DialogHeader>
                     <TaskScheduler 
                       task={task}
