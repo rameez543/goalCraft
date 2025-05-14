@@ -210,3 +210,73 @@ export async function generateRoadblockTips(goal: Goal): Promise<string[]> {
     ];
   }
 }
+
+/**
+ * Discuss a task with AI
+ * @param goal The related goal
+ * @param task The task to discuss
+ * @param message User's message or question about the task
+ */
+export async function discussTaskWithAI(goal: Goal, task: any, message: string): Promise<string> {
+  try {
+    // Check if there's an API key
+    if (!process.env.OPENAI_API_KEY) {
+      return "I'd suggest breaking this task into smaller steps and tackle them one by one. If you're unsure about how to proceed, consider researching specific aspects or asking someone with relevant experience for advice.";
+    }
+
+    const taskWithContext = {
+      title: task.title,
+      context: task.context || "",
+      complexity: task.complexity || "medium",
+      estimatedMinutes: task.estimatedMinutes || 0,
+      completed: task.completed,
+      actionItems: task.actionItems || [],
+      subtasks: task.subtasks.map((s: any) => ({
+        title: s.title,
+        context: s.context || "",
+        completed: s.completed
+      })),
+      goalTitle: goal.title
+    };
+
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: "system",
+          content: `You are a helpful AI task assistant in the TaskBreaker app. Your role is to help users with their tasks by:
+          
+          1. Answering specific questions about how to accomplish the task
+          2. Suggesting approaches or methodologies for complex tasks
+          3. Breaking down confusing aspects into clearer steps
+          4. Providing relevant resources or techniques that might help
+          5. Offering encouragement and practical advice for roadblocks
+          
+          You have access to the task details including its context, complexity, action items, and subtasks.
+          
+          Guidelines:
+          - Keep responses practical, action-oriented, and specific to the task at hand
+          - If the task is technical, provide technical guidance appropriate to the user's level
+          - If the task is creative, help with brainstorming and structure
+          - Avoid generic advice - tie everything back to the specific task details
+          - Be conversational but efficient - focus on helping them move forward
+          - Consider the overall goal the task belongs to for context
+          - When appropriate, refer to specific subtasks or action items from the task data`
+        },
+        {
+          role: "user",
+          content: `Task: ${JSON.stringify(taskWithContext)}\n\nMy question/comment: ${message}`
+        }
+      ]
+    });
+    
+    // Return the AI's response
+    return response.choices[0].message.content || "I suggest breaking this task into smaller steps and tackling them one by one.";
+    
+  } catch (error) {
+    console.error('Error discussing task with AI:', error);
+    
+    // Fallback message if the API fails
+    return "I suggest breaking this task into smaller steps and tackling them one by one. If you're unsure about how to proceed, consider researching specific aspects or asking someone with relevant experience for advice.";
+  }
+}

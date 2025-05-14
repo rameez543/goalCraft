@@ -269,6 +269,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Edit subtask details
+  app.patch("/api/subtasks/edit", async (req: Request, res: Response) => {
+    try {
+      const { goalId, taskId, subtaskId, title, context } = req.body;
+      
+      if (!goalId || !taskId || !subtaskId) {
+        res.status(400).json({ message: "Goal ID, task ID, and subtask ID are required" });
+        return;
+      }
+      
+      // Get the goal
+      const goal = await storage.getGoal(goalId);
+      if (!goal) {
+        res.status(404).json({ message: "Goal not found" });
+        return;
+      }
+      
+      // Find the task in the goal
+      const taskIndex = goal.tasks.findIndex(t => t.id === taskId);
+      if (taskIndex === -1) {
+        res.status(404).json({ message: "Task not found" });
+        return;
+      }
+      
+      // Find the subtask in the task
+      const subtaskIndex = goal.tasks[taskIndex].subtasks.findIndex(s => s.id === subtaskId);
+      if (subtaskIndex === -1) {
+        res.status(404).json({ message: "Subtask not found" });
+        return;
+      }
+      
+      // Update the subtask
+      const updatedTasks = [...goal.tasks];
+      const updatedSubtasks = [...updatedTasks[taskIndex].subtasks];
+      updatedSubtasks[subtaskIndex] = {
+        ...updatedSubtasks[subtaskIndex],
+        ...(title !== undefined ? { title } : {}),
+        ...(context !== undefined ? { context } : {})
+      };
+      
+      updatedTasks[taskIndex] = {
+        ...updatedTasks[taskIndex],
+        subtasks: updatedSubtasks
+      };
+      
+      // Save the updated goal
+      const updatedGoal = await storage.updateGoal(goalId, { tasks: updatedTasks });
+      
+      if (!updatedGoal) {
+        res.status(500).json({ message: "Failed to update subtask" });
+        return;
+      }
+      
+      res.json(updatedGoal);
+    } catch (error) {
+      console.error("Error editing subtask:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to edit subtask" 
+      });
+    }
+  });
+  
   // Add progress update for a goal
   app.post("/api/goals/:id/progress", async (req: Request, res: Response) => {
     try {
