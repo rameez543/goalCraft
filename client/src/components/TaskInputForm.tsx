@@ -17,6 +17,13 @@ const TaskInputForm: React.FC = () => {
   const [hasTimeConstraint, setHasTimeConstraint] = useState(false);
   const [timeConstraintMinutes, setTimeConstraintMinutes] = useState<number | undefined>(undefined);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [showNotificationOptions, setShowNotificationOptions] = useState(false);
+  
+  // Notification options
+  const [enableNotifications, setEnableNotifications] = useState(false);
+  const [notificationChannels, setNotificationChannels] = useState<NotificationChannel[]>([]);
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   
   const { createGoal, loading } = useGoals();
   const { toast } = useToast();
@@ -33,18 +40,45 @@ const TaskInputForm: React.FC = () => {
       return;
     }
 
+    // Validate contact info if notifications are enabled
+    if (enableNotifications) {
+      if (notificationChannels.includes('email') && !contactEmail) {
+        toast({
+          variant: 'destructive',
+          title: 'Missing contact information',
+          description: 'Please provide an email address for email notifications.',
+        });
+        return;
+      }
+      
+      if (notificationChannels.includes('whatsapp') && !contactPhone) {
+        toast({
+          variant: 'destructive',
+          title: 'Missing contact information',
+          description: 'Please provide a phone number for WhatsApp notifications.',
+        });
+        return;
+      }
+    }
+
     try {
       // Prepare the data including the optional fields
       const goalData = {
         title: goalInput,
         additionalInfo: additionalInfo.trim() || undefined,
-        timeConstraintMinutes: hasTimeConstraint ? timeConstraintMinutes : undefined
+        timeConstraintMinutes: hasTimeConstraint ? timeConstraintMinutes : undefined,
+        notificationChannels: enableNotifications ? notificationChannels : [],
+        contactEmail: enableNotifications && notificationChannels.includes('email') ? contactEmail : undefined,
+        contactPhone: enableNotifications && notificationChannels.includes('whatsapp') ? contactPhone : undefined
       };
       
       await createGoal(
         goalData.title,
         goalData.timeConstraintMinutes,
-        goalData.additionalInfo
+        goalData.additionalInfo,
+        goalData.notificationChannels,
+        goalData.contactEmail,
+        goalData.contactPhone
       );
       
       // Clear the input after successful submission
@@ -53,6 +87,11 @@ const TaskInputForm: React.FC = () => {
       setTimeConstraintMinutes(undefined);
       setHasTimeConstraint(false);
       setShowAdvancedOptions(false);
+      setShowNotificationOptions(false);
+      setEnableNotifications(false);
+      setNotificationChannels([]);
+      setContactEmail('');
+      setContactPhone('');
     } catch (error) {
       console.error('Error submitting goal:', error);
     }
@@ -80,11 +119,16 @@ const TaskInputForm: React.FC = () => {
             </div>
             
             <Accordion
-              type="single"
-              collapsible
+              type="multiple"
               className="w-full"
-              value={showAdvancedOptions ? "advanced-options" : undefined}
-              onValueChange={(value) => setShowAdvancedOptions(value === "advanced-options")}
+              value={[
+                ...(showAdvancedOptions ? ["advanced-options"] : []),
+                ...(showNotificationOptions ? ["notification-options"] : [])
+              ]}
+              onValueChange={(value) => {
+                setShowAdvancedOptions(value.includes("advanced-options"));
+                setShowNotificationOptions(value.includes("notification-options"));
+              }}
             >
               <AccordionItem value="advanced-options" className="border-b-0">
                 <AccordionTrigger className="text-sm font-medium text-gray-700 hover:text-primary py-2">
@@ -144,6 +188,116 @@ const TaskInputForm: React.FC = () => {
                       For complex goals, adding more details helps create a better task breakdown
                     </p>
                   </div>
+                </AccordionContent>
+              </AccordionItem>
+              
+              <AccordionItem value="notification-options" className="border-b-0">
+                <AccordionTrigger className="text-sm font-medium text-gray-700 hover:text-primary py-2">
+                  Accountability & Notifications
+                </AccordionTrigger>
+                <AccordionContent className="space-y-4 pt-2">
+                  {/* Enable Notifications */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="enable-notifications"
+                        checked={enableNotifications}
+                        onCheckedChange={setEnableNotifications}
+                      />
+                      <Label htmlFor="enable-notifications" className="text-sm font-medium text-gray-700">
+                        Enable notifications for accountability
+                      </Label>
+                    </div>
+                  </div>
+                  
+                  {enableNotifications && (
+                    <div className="space-y-4 pl-8">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                          Notification Channels
+                        </Label>
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id="email-notify" 
+                              checked={notificationChannels.includes('email')}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setNotificationChannels([...notificationChannels, 'email']);
+                                } else {
+                                  setNotificationChannels(notificationChannels.filter(channel => channel !== 'email'));
+                                }
+                              }}
+                            />
+                            <Label htmlFor="email-notify" className="text-sm text-gray-700">
+                              Email
+                            </Label>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id="whatsapp-notify" 
+                              checked={notificationChannels.includes('whatsapp')}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setNotificationChannels([...notificationChannels, 'whatsapp']);
+                                } else {
+                                  setNotificationChannels(notificationChannels.filter(channel => channel !== 'whatsapp'));
+                                }
+                              }}
+                            />
+                            <Label htmlFor="whatsapp-notify" className="text-sm text-gray-700">
+                              WhatsApp
+                            </Label>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Contact Information */}
+                      {notificationChannels.includes('email') && (
+                        <div>
+                          <Label htmlFor="contact-email" className="text-sm font-medium text-gray-700 mb-1 block">
+                            Email Address
+                          </Label>
+                          <Input
+                            id="contact-email"
+                            type="email"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary focus:border-primary"
+                            placeholder="your@email.com"
+                            value={contactEmail}
+                            onChange={(e) => setContactEmail(e.target.value)}
+                            disabled={loading}
+                          />
+                        </div>
+                      )}
+                      
+                      {notificationChannels.includes('whatsapp') && (
+                        <div>
+                          <Label htmlFor="contact-phone" className="text-sm font-medium text-gray-700 mb-1 block">
+                            Phone Number (with country code)
+                          </Label>
+                          <Input
+                            id="contact-phone"
+                            type="tel"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary focus:border-primary"
+                            placeholder="+1234567890"
+                            value={contactPhone}
+                            onChange={(e) => setContactPhone(e.target.value)}
+                            disabled={loading}
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Include country code (e.g., +1 for US)
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                        <p className="text-xs text-blue-700">
+                          With notifications enabled, you'll receive updates and can report progress or roadblocks to help you stay accountable toward your goal.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </AccordionContent>
               </AccordionItem>
             </Accordion>

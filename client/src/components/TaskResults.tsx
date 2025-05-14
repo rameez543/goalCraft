@@ -3,6 +3,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import TaskItem from './TaskItem';
+import ProgressUpdateForm from './ProgressUpdateForm';
+import RoadblockForm from './RoadblockForm';
 import { Goal } from '../types';
 
 interface TaskResultsProps {
