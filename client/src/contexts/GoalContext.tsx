@@ -327,6 +327,152 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Update task scheduling (due date, calendar, reminders)
+  const updateTaskSchedule = async (
+    goalId: number, 
+    taskId: string, 
+    updates: { 
+      dueDate?: string; 
+      addedToCalendar?: boolean;
+      reminderEnabled?: boolean;
+      reminderTime?: string;
+    }
+  ): Promise<void> => {
+    try {
+      // Optimistically update the UI
+      setGoals(prevGoals => 
+        prevGoals.map(goal => {
+          if (goal.id === goalId) {
+            const updatedTasks = goal.tasks.map(task => {
+              if (task.id === taskId) {
+                return {
+                  ...task,
+                  ...(updates.dueDate !== undefined && { dueDate: updates.dueDate }),
+                  ...(updates.addedToCalendar !== undefined && { addedToCalendar: updates.addedToCalendar }),
+                  ...(updates.reminderEnabled !== undefined && { reminderEnabled: updates.reminderEnabled }),
+                  ...(updates.reminderTime !== undefined && { reminderTime: updates.reminderTime })
+                };
+              }
+              return task;
+            });
+            
+            return { ...goal, tasks: updatedTasks };
+          }
+          return goal;
+        })
+      );
+      
+      // Send update to API
+      await apiRequest('PATCH', '/api/tasks/schedule', { goalId, taskId, updates });
+      
+      // Invalidate any related queries
+      queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+      
+      toast({
+        title: 'Task scheduled',
+        description: updates.dueDate 
+          ? `Task scheduled for ${new Date(updates.dueDate).toLocaleDateString()}.` 
+          : 'Task schedule updated.',
+      });
+    } catch (err) {
+      // Revert the optimistic update on error
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update task schedule. Please try again.',
+      });
+      console.error('Error updating task schedule:', err);
+      
+      // Refetch to get the correct state
+      try {
+        const response = await fetch(`/api/goals/${goalId}`, { credentials: 'include' });
+        if (response.ok) {
+          const updatedGoal = await response.json();
+          setGoals(prevGoals => 
+            prevGoals.map(goal => goal.id === updatedGoal.id ? updatedGoal : goal)
+          );
+        }
+      } catch (refetchError) {
+        console.error('Error refetching goal:', refetchError);
+      }
+    }
+  };
+  
+  // Update subtask scheduling (due date, calendar)
+  const updateSubtaskSchedule = async (
+    goalId: number, 
+    taskId: string, 
+    subtaskId: string,
+    updates: { 
+      dueDate?: string; 
+      addedToCalendar?: boolean;
+    }
+  ): Promise<void> => {
+    try {
+      // Optimistically update the UI
+      setGoals(prevGoals => 
+        prevGoals.map(goal => {
+          if (goal.id === goalId) {
+            const updatedTasks = goal.tasks.map(task => {
+              if (task.id === taskId) {
+                const updatedSubtasks = task.subtasks.map(subtask => {
+                  if (subtask.id === subtaskId) {
+                    return {
+                      ...subtask,
+                      ...(updates.dueDate !== undefined && { dueDate: updates.dueDate }),
+                      ...(updates.addedToCalendar !== undefined && { addedToCalendar: updates.addedToCalendar })
+                    };
+                  }
+                  return subtask;
+                });
+                
+                return { ...task, subtasks: updatedSubtasks };
+              }
+              return task;
+            });
+            
+            return { ...goal, tasks: updatedTasks };
+          }
+          return goal;
+        })
+      );
+      
+      // Send update to API
+      await apiRequest('PATCH', '/api/subtasks/schedule', { goalId, taskId, subtaskId, updates });
+      
+      // Invalidate any related queries
+      queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+      
+      toast({
+        title: 'Subtask scheduled',
+        description: updates.dueDate 
+          ? `Subtask scheduled for ${new Date(updates.dueDate).toLocaleDateString()}.` 
+          : 'Subtask schedule updated.',
+      });
+    } catch (err) {
+      // Revert the optimistic update on error
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update subtask schedule. Please try again.',
+      });
+      console.error('Error updating subtask schedule:', err);
+      
+      // Refetch to get the correct state
+      try {
+        const response = await fetch(`/api/goals/${goalId}`, { credentials: 'include' });
+        if (response.ok) {
+          const updatedGoal = await response.json();
+          setGoals(prevGoals => 
+            prevGoals.map(goal => goal.id === updatedGoal.id ? updatedGoal : goal)
+          );
+        }
+      } catch (refetchError) {
+        console.error('Error refetching goal:', refetchError);
+      }
+    }
+  };
+
   return (
     <GoalContext.Provider value={{ 
       goals, 
@@ -337,7 +483,9 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       toggleTaskCompletion,
       toggleSubtaskCompletion,
       addProgressUpdate,
-      reportRoadblock
+      reportRoadblock,
+      updateTaskSchedule,
+      updateSubtaskSchedule
     }}>
       {children}
     </GoalContext.Provider>

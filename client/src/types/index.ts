@@ -3,6 +3,9 @@ export interface Subtask {
   title: string;
   completed: boolean;
   estimatedMinutes?: number;
+  context?: string;
+  dueDate?: string;
+  addedToCalendar?: boolean;
 }
 
 export interface Task {
@@ -12,6 +15,12 @@ export interface Task {
   subtasks: Subtask[];
   estimatedMinutes?: number;
   complexity?: 'low' | 'medium' | 'high';
+  context?: string;
+  actionItems?: string[];
+  dueDate?: string;
+  addedToCalendar?: boolean;
+  reminderEnabled?: boolean;
+  reminderTime?: string;
 }
 
 export type NotificationChannel = 'email' | 'slack' | 'whatsapp';
@@ -65,4 +74,23 @@ export type GoalContextType = {
   toggleSubtaskCompletion: (goalId: number, taskId: string, subtaskId: string, completed: boolean) => Promise<void>;
   addProgressUpdate: (options: ProgressUpdateOptions) => Promise<void>;
   reportRoadblock: (options: RoadblockOptions) => Promise<void>;
+  updateTaskSchedule: (
+    goalId: number, 
+    taskId: string, 
+    updates: { 
+      dueDate?: string; 
+      addedToCalendar?: boolean;
+      reminderEnabled?: boolean;
+      reminderTime?: string;
+    }
+  ) => Promise<void>;
+  updateSubtaskSchedule: (
+    goalId: number, 
+    taskId: string, 
+    subtaskId: string,
+    updates: { 
+      dueDate?: string; 
+      addedToCalendar?: boolean;
+    }
+  ) => Promise<void>;
 };
