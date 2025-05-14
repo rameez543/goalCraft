@@ -24,94 +24,19 @@ const AICoach: React.FC = () => {
     refetchOnWindowFocus: false
   });
 
-  // Get the correct icon based on message type
+  // Get the correct emoji icon based on message type
   const getMessageIcon = (type: CoachMessage['type']) => {
     switch (type) {
       case 'encouragement':
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-blue-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        );
+        return <span className="text-2xl">🌟</span>;
       case 'tip':
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-yellow-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-            />
-          </svg>
-        );
+        return <span className="text-2xl">💡</span>;
       case 'congratulation':
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-green-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        );
+        return <span className="text-2xl">🎉</span>;
       case 'milestone':
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-purple-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
-            />
-          </svg>
-        );
+        return <span className="text-2xl">🏆</span>;
       default:
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-blue-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        );
+        return <span className="text-2xl">🤖</span>;
     }
   };
 
@@ -119,15 +44,15 @@ const AICoach: React.FC = () => {
   const getMessageBgColor = (type: CoachMessage['type']) => {
     switch (type) {
       case 'encouragement':
-        return 'bg-blue-50';
+        return 'bg-gradient-to-r from-blue-50 to-indigo-50';
       case 'tip':
-        return 'bg-yellow-50';
+        return 'bg-gradient-to-r from-yellow-50 to-amber-50';
       case 'congratulation':
-        return 'bg-green-50';
+        return 'bg-gradient-to-r from-green-50 to-emerald-50';
       case 'milestone':
-        return 'bg-purple-50';
+        return 'bg-gradient-to-r from-purple-50 to-fuchsia-50';
       default:
-        return 'bg-blue-50';
+        return 'bg-gradient-to-r from-blue-50 to-indigo-50';
     }
   };
 
@@ -149,13 +74,15 @@ const AICoach: React.FC = () => {
 
   if (isCoachLoading) {
     return (
-      <Card className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200">
+      <Card className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 shadow-sm">
         <CardContent className="p-4">
           <div className="flex items-center animate-pulse">
-            <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0"></div>
-            <div className="ml-3 flex-1">
-              <div className="h-3 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+            <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center">
+              <span className="text-gray-300 text-2xl">🤖</span>
+            </div>
+            <div className="ml-4 flex-1">
+              <div className="h-4 bg-gray-200 rounded-full w-3/4 mb-3"></div>
+              <div className="h-3 bg-gray-200 rounded-full w-1/2"></div>
             </div>
           </div>
         </CardContent>
@@ -165,26 +92,13 @@ const AICoach: React.FC = () => {
 
   if (isCoachError || !coachData) {
     return (
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 shadow-sm">
         <CardContent className="p-4">
           <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-blue-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <span className="text-2xl">🤖</span>
             </div>
-            <div className="ml-3">
+            <div className="ml-4">
               <p className="text-sm font-medium text-blue-800">
                 Keep going! You're doing great with your tasks.
               </p>
@@ -196,18 +110,18 @@ const AICoach: React.FC = () => {
   }
 
   return (
-    <Card className={`${getMessageBgColor(coachData.type)} border ${getMessageBorderColor(coachData.type)}`}>
-      <CardContent className="p-4">
-        <div className="flex items-center">
-          <div className={`w-8 h-8 rounded-full bg-white flex items-center justify-center flex-shrink-0 border ${getMessageBorderColor(coachData.type)}`}>
+    <Card className={`${getMessageBgColor(coachData.type)} border ${getMessageBorderColor(coachData.type)} shadow-sm`}>
+      <CardContent className="p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className={`w-16 h-16 rounded-full bg-white flex items-center justify-center flex-shrink-0 border-2 ${getMessageBorderColor(coachData.type)} shadow-sm mx-auto sm:mx-0`}>
             {getMessageIcon(coachData.type)}
           </div>
-          <div className="ml-3">
-            <p className="text-sm font-medium text-gray-800">
+          <div className="sm:ml-2 text-center sm:text-left">
+            <p className="text-sm font-medium text-gray-800 leading-relaxed">
               {coachData.message}
             </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Your TaskBreaker AI Coach
+            <p className="text-xs font-medium text-gray-500 mt-2 flex items-center justify-center sm:justify-start">
+              <span className="text-lg mr-1">🧠</span> Your TaskBreaker AI Coach
             </p>
           </div>
         </div>

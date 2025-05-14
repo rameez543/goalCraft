@@ -243,58 +243,75 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Progress Timeline Visualization */}
-      <Card>
+      <Card className="border border-purple-100 shadow-sm mt-6">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-medium">Progress Timeline</CardTitle>
+          <CardTitle className="text-lg font-medium flex items-center">
+            <span className="text-xl mr-2">📈</span> Progress Timeline
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-5">
             {/* Overall Progress Bar */}
-            <div className="flex items-center space-x-2">
-              <div className="text-xs text-gray-500 w-20">All Goals</div>
-              <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
+            <div className="flex flex-col md:flex-row md:items-center gap-2 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+              <div className="text-sm font-medium text-indigo-700 md:w-28 flex items-center">
+                <span className="mr-2">🌟</span> All Goals
+              </div>
+              <div className="flex-1 bg-white rounded-full h-5 overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-blue-500 to-violet-500 rounded-full"
+                  className="h-full bg-gradient-to-r from-blue-500 to-violet-500 rounded-full transition-all duration-500"
                   style={{ width: `${overallProgress}%` }}
                 ></div>
               </div>
-              <div className="text-xs font-medium w-12 text-right">{overallProgress}%</div>
+              <div className="text-sm font-bold bg-indigo-100 px-3 py-1 rounded-full text-indigo-700 md:w-16 text-center">
+                {overallProgress}%
+              </div>
             </div>
             
-            {/* Divider */}
-            <div className="border-t border-gray-100"></div>
-            
             {/* Individual Goal Progress Bars */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               {sortedGoals.map(goal => {
                 const completedTasks = goal.tasks.filter(t => t.completed).length;
                 const totalTasks = goal.tasks.length;
                 
-                // Choose color based on progress
+                // Choose color and emoji based on progress
                 let progressColor = 'from-red-400 to-red-500';
-                if (goal.progress > 75) progressColor = 'from-green-400 to-green-500';
-                else if (goal.progress > 50) progressColor = 'from-blue-400 to-blue-500';
-                else if (goal.progress > 25) progressColor = 'from-yellow-400 to-yellow-500';
+                let progressEmoji = '🔴';
+                if (goal.progress > 75) {
+                  progressColor = 'from-green-400 to-green-500';
+                  progressEmoji = '🟢';
+                } else if (goal.progress > 50) {
+                  progressColor = 'from-blue-400 to-blue-500';
+                  progressEmoji = '🔵';
+                } else if (goal.progress > 25) {
+                  progressColor = 'from-yellow-400 to-yellow-500';
+                  progressEmoji = '🟡';
+                }
                 
                 return (
-                  <div key={goal.id} className="flex items-center space-x-2">
-                    <div className="text-xs text-gray-500 w-20 truncate">{goal.title}</div>
-                    <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
+                  <div key={goal.id} className="flex flex-col md:flex-row md:items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-medium text-gray-700 md:w-28 flex items-center">
+                      <span className="mr-2">{progressEmoji}</span>
+                      <span className="truncate">{goal.title}</span>
+                    </div>
+                    <div className="flex-1 bg-white rounded-full h-4 overflow-hidden">
                       <div 
-                        className={`h-full bg-gradient-to-r ${progressColor} rounded-full`}
+                        className={`h-full bg-gradient-to-r ${progressColor} rounded-full transition-all duration-500`}
                         style={{ width: `${goal.progress}%` }}
                       ></div>
                     </div>
-                    <div className="text-xs font-medium w-12 text-right">
-                      {completedTasks}/{totalTasks} tasks
+                    <div className="text-sm font-bold bg-gray-200 px-3 py-1 rounded-full text-gray-700 w-full md:w-auto text-center flex justify-between md:block">
+                      <span>{goal.progress}%</span>
+                      <span className="md:hidden"> • {completedTasks}/{totalTasks} tasks</span>
+                      <span className="hidden md:inline"> ({completedTasks}/{totalTasks})</span>
                     </div>
                   </div>
                 );
               })}
               
               {goals.length === 0 && (
-                <div className="text-center py-6 text-sm text-gray-500">
-                  No goals yet. Create your first goal to track progress!
+                <div className="text-center py-8 text-sm text-gray-500 bg-gray-50 rounded-lg">
+                  <div className="text-4xl mb-2">🎯</div>
+                  <p>No goals yet. Create your first goal to track progress!</p>
                 </div>
               )}
             </div>
