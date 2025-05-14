@@ -8,6 +8,7 @@ import { Goal, ReminderFrequency } from '../types';
 import AICoach, { RoadblockTips } from './AICoach';
 import { WhatsAppNudge } from './WhatsAppNudge';
 import { NotificationSettings } from './NotificationSettings';
+import { useTab } from '../contexts/TabContext';
 
 const Dashboard: React.FC = () => {
   const { goals, loading, updateGlobalSettings } = useGoals();
@@ -252,6 +253,9 @@ const Dashboard: React.FC = () => {
 
 // Goal Summary Card Component
 const GoalSummaryCard: React.FC<{ goal: Goal; showRoadblock?: boolean }> = ({ goal, showRoadblock = false }) => {
+  // Use tab context for navigation
+  const { viewGoalDetails } = useTab();
+  
   // Calculate task completion
   const totalTasks = goal.tasks.length;
   const completedTasks = goal.tasks.filter(task => task.completed).length;
@@ -393,18 +397,8 @@ const GoalSummaryCard: React.FC<{ goal: Goal; showRoadblock?: boolean }> = ({ go
               className="text-sm gap-1"
               onClick={(e) => {
                 e.stopPropagation(); // Prevent card collapse when clicking button
-                // Direct approach to switch to goals tab
-                const goalsTab = document.querySelector('[value="goals"]') as HTMLElement;
-                if (goalsTab) {
-                  goalsTab.click();
-                  // Scroll to goal after a short delay
-                  setTimeout(() => {
-                    const goalElement = document.getElementById(`goal-${goal.id}`);
-                    if (goalElement) {
-                      goalElement.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }, 100);
-                }
+                // Use tab context to navigate to goal details
+                viewGoalDetails(goal.id);
               }}
             >
               <span>View Full Details</span>
