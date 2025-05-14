@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { useGoals } from '../contexts/GoalContext';
 import { Goal, ReminderFrequency } from '../types';
 import AICoach, { RoadblockTips } from './AICoach';
@@ -15,26 +16,8 @@ const Dashboard: React.FC = () => {
   const [showWhatsAppNudge, setShowWhatsAppNudge] = useState(false);
   const [whatsAppContactSaved, setWhatsAppContactSaved] = useState(false);
   
-  // Check if WhatsApp notification preference has been set
-  useEffect(() => {
-    // Check if the user has tasks and hasn't already set up WhatsApp
-    if (goals.length > 0 && !whatsAppContactSaved) {
-      // Check if any existing tasks have WhatsApp notifications enabled
-      const hasWhatsAppEnabled = goals.some(goal => 
-        goal.tasks.some(task => task.enableWhatsapp)
-      );
-      
-      // Only show the nudge if WhatsApp isn't already enabled
-      if (!hasWhatsAppEnabled) {
-        // Show the nudge after a short delay (user has time to see dashboard first)
-        const timer = setTimeout(() => {
-          setShowWhatsAppNudge(true);
-        }, 1500);
-        
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [goals, whatsAppContactSaved]);
+  // Removed the automatic WhatsApp notification popup as per user's request
+  // User can now access it through settings
 
   // Handle enabling WhatsApp notifications
   const handleEnableWhatsApp = async (phoneNumber: string, frequency: ReminderFrequency = 'task-only'): Promise<void> => {
@@ -123,9 +106,20 @@ const Dashboard: React.FC = () => {
               />
               <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{overallProgress}%</span>
             </div>
-            <p className="text-sm text-gray-500 mt-2">
-              ✨ {goals.length} active goal{goals.length !== 1 ? 's' : ''}
-            </p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-sm text-gray-500">
+                ✨ {goals.length} active goal{goals.length !== 1 ? 's' : ''}
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs px-2 py-1 h-auto"
+                onClick={() => setShowWhatsAppNudge(true)}
+                title="Configure WhatsApp notifications"
+              >
+                <span className="mr-1">💬</span> WhatsApp Settings
+              </Button>
+            </div>
             
             {/* Progress Breakdown */}
             <div className="mt-4 pt-4 border-t border-gray-100">
