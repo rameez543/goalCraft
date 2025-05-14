@@ -21,6 +21,8 @@ export interface Task {
   addedToCalendar?: boolean;
   reminderEnabled?: boolean;
   reminderTime?: string;
+  enableWhatsapp?: boolean;
+  whatsappNumber?: string;
 }
 
 export type NotificationChannel = 'email' | 'slack' | 'whatsapp';

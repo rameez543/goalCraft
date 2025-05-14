@@ -12,6 +12,8 @@ interface TaskSchedulerProps {
   onUpdateDueDate: (dueDate: string | undefined) => void;
   onAddToCalendar: (add: boolean) => void;
   onEnableReminder?: (enabled: boolean, reminderTime?: string) => void;
+  onEnableWhatsapp?: (enabled: boolean, phoneNumber?: string) => void;
+  contactPhone?: string;
 }
 
 export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
@@ -19,7 +21,9 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
   subtask,
   onUpdateDueDate,
   onAddToCalendar,
-  onEnableReminder
+  onEnableReminder,
+  onEnableWhatsapp,
+  contactPhone
 }) => {
   // Use subtask date if a subtask is provided, otherwise use task date
   const [date, setDate] = useState<Date | undefined>(
@@ -40,6 +44,19 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
   
   const [reminderTime, setReminderTime] = useState<string>(
     task.reminderTime || '09:00'
+  );
+  
+  // WhatsApp notification state
+  const [enableWhatsapp, setEnableWhatsapp] = useState<boolean>(
+    !!task.enableWhatsapp || !!contactPhone
+  );
+  
+  const [whatsappNumber, setWhatsappNumber] = useState<string>(
+    contactPhone || ''
+  );
+  
+  const [whatsappSaved, setWhatsappSaved] = useState<boolean>(
+    !!contactPhone
   );
 
   const handleCalendarChange = (date: Date | undefined) => {
@@ -63,6 +80,29 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
     setReminderTime(e.target.value);
     if (enableReminder && onEnableReminder) {
       onEnableReminder(enableReminder, e.target.value);
+    }
+  };
+  
+  // WhatsApp notification handlers
+  const handleEnableWhatsappChange = (checked: boolean) => {
+    setEnableWhatsapp(checked);
+    if (onEnableWhatsapp && checked === false) {
+      // If turning off WhatsApp notifications, pass the disabled state
+      onEnableWhatsapp(false);
+    }
+  };
+  
+  const handleWhatsappNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setWhatsappNumber(e.target.value);
+    setWhatsappSaved(false); // Reset saved state when changing number
+  };
+  
+  const handleSaveWhatsappNumber = () => {
+    if (whatsappNumber && whatsappNumber.trim() !== '') {
+      setWhatsappSaved(true);
+      if (onEnableWhatsapp) {
+        onEnableWhatsapp(true, whatsappNumber);
+      }
     }
   };
 
@@ -128,6 +168,68 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
           onCheckedChange={handleAddToCalendarChange}
           disabled={!date}
         />
+      </div>
+      
+      {/* WhatsApp Notification section */}
+      <div className="space-y-4 pt-2 border-t">
+        <div className="space-y-0.5">
+          <Label className="text-sm font-medium">
+            Notification Preferences
+          </Label>
+          <p className="text-xs text-gray-500">
+            Add your contact details to increase accountability
+          </p>
+        </div>
+        
+        <div className="flex items-center justify-between space-x-2">
+          <div className="space-y-0.5">
+            <Label htmlFor="enable-whatsapp" className="text-sm font-medium">
+              WhatsApp Notification
+            </Label>
+            <p className="text-xs text-gray-500">
+              Get notified via WhatsApp
+            </p>
+          </div>
+          <Switch
+            id="enable-whatsapp"
+            checked={enableWhatsapp}
+            onCheckedChange={handleEnableWhatsappChange}
+            disabled={!date}
+          />
+        </div>
+        
+        {enableWhatsapp && (
+          <div className="space-y-2">
+            <Label htmlFor="whatsapp-number" className="text-sm font-medium">
+              WhatsApp Number
+            </Label>
+            <div className="flex gap-2">
+              <input
+                id="whatsapp-number"
+                type="tel"
+                placeholder="+1 (555) 555-5555"
+                value={whatsappNumber}
+                onChange={handleWhatsappNumberChange}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              />
+              <Button 
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSaveWhatsappNumber}
+                className="whitespace-nowrap"
+              >
+                Save
+              </Button>
+            </div>
+            {whatsappSaved && (
+              <p className="text-xs text-green-600 flex items-center mt-1">
+                <span className="mr-1">✓</span> 
+                WhatsApp saved for task notifications
+              </p>
+            )}
+          </div>
+        )}
       </div>
       
       {/* Reminder settings (only for tasks, not subtasks) */}
