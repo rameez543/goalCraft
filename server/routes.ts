@@ -13,8 +13,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate request body
       const validatedData = createGoalSchema.parse(req.body);
       
-      // Use OpenAI to break down the goal into tasks with time estimates
-      const { tasks, totalEstimatedMinutes } = await breakdownGoal(
+      // Use OpenAI to break down the goal into tasks with time estimates and context
+      const { tasks, totalEstimatedMinutes, overallSuggestions } = await breakdownGoal(
         validatedData.title,
         validatedData.timeConstraintMinutes,
         validatedData.additionalInfo
@@ -36,7 +36,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         progress: 0,
         totalEstimatedMinutes,
         timeConstraintMinutes: validatedData.timeConstraintMinutes,
-        additionalInfo: validatedData.additionalInfo
+        additionalInfo: validatedData.additionalInfo,
+        overallSuggestions: overallSuggestions,
+        notificationChannels: [],
+        lastProgressUpdate: null,
+        roadblocks: null
       });
       
       res.status(201).json(goal);

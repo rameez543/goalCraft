@@ -7,6 +7,7 @@ export const subtasks = z.object({
   title: z.string(),
   completed: z.boolean().default(false),
   estimatedMinutes: z.number().optional(),
+  context: z.string().optional(), // Additional context about the subtask
 });
 
 export type Subtask = z.infer<typeof subtasks>;
@@ -18,6 +19,8 @@ export const tasks = z.object({
   subtasks: z.array(subtasks).default([]),
   estimatedMinutes: z.number().optional(),
   complexity: z.enum(['low', 'medium', 'high']).optional(),
+  context: z.string().optional(), // Additional context about the task
+  actionItems: z.array(z.string()).optional(), // Specific action items for this task
 });
 
 export type Task = z.infer<typeof tasks>;
@@ -56,6 +59,10 @@ export const goals = pgTable("goals", {
   totalEstimatedMinutes: integer("total_estimated_minutes"),
   timeConstraintMinutes: integer("time_constraint_minutes"),
   additionalInfo: text("additional_info"),
+  overallSuggestions: text("overall_suggestions"), // Overall suggestions from AI
+  notificationChannels: jsonb("notification_channels").$type<string[]>(), // Email, Slack, WhatsApp, etc.
+  lastProgressUpdate: text("last_progress_update"), // Latest progress update from user
+  roadblocks: text("roadblocks"), // Any blockers or challenges reported by user
 });
 
 export const insertGoalSchema = createInsertSchema(goals).omit({

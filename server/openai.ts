@@ -10,12 +10,16 @@ interface TaskBreakdownResponse {
     title: string;
     estimatedMinutes: number;
     complexity: 'low' | 'medium' | 'high';
+    context?: string; // Additional context about the task for AI
+    actionItems?: string[]; // Specific action items for this task
     subtasks?: {
       title: string;
       estimatedMinutes: number;
+      context?: string; // Additional context about the subtask
     }[];
   }[];
   totalEstimatedMinutes: number;
+  overallSuggestions?: string; // General suggestions for approaching the goal
 }
 
 export async function breakdownGoal(
@@ -43,7 +47,7 @@ export async function breakdownGoal(
     }
     
     const prompt = `
-      Break down the following goal into manageable tasks and subtasks with time estimates:
+      Break down the following goal into manageable tasks and subtasks with time estimates and contextual information:
       
       Goal: "${goalTitle}"
       
@@ -51,9 +55,13 @@ export async function breakdownGoal(
       ${additionalInfoText}
       
       Please analyze this goal and provide a comprehensive breakdown into 5-10 specific, actionable tasks.
-      For tasks that need further breakdown, include 1-3 subtasks.
+      For every task, include 2-5 subtasks with detailed breakdown.
       
-      For each task and subtask, estimate the time needed in minutes and assess the complexity (low, medium, high).
+      For each task and subtask:
+      1. Estimate the time needed in minutes
+      2. Assess the complexity (low, medium, high)
+      3. Provide useful context and recommendations
+      4. Include specific action items for major tasks
       
       Return your response as a JSON object with the following structure:
       {
@@ -62,22 +70,51 @@ export async function breakdownGoal(
             "title": "Task title",
             "estimatedMinutes": 30,
             "complexity": "medium",
+            "context": "Detailed information about this task, including why it's important and any considerations",
+            "actionItems": [
+              "Specific action 1 to complete this task",
+              "Specific action 2 to complete this task"
+            ],
             "subtasks": [
-              { "title": "Subtask 1 title", "estimatedMinutes": 15 },
-              { "title": "Subtask 2 title", "estimatedMinutes": 15 }
+              { 
+                "title": "Subtask 1 title", 
+                "estimatedMinutes": 15,
+                "context": "Specific context about this subtask" 
+              },
+              { 
+                "title": "Subtask 2 title", 
+                "estimatedMinutes": 15,
+                "context": "Specific context about this subtask" 
+              }
             ]
           },
           {
-            "title": "Another task with no subtasks",
+            "title": "Another task",
             "estimatedMinutes": 20,
-            "complexity": "low"
+            "complexity": "low",
+            "context": "Contextual information for this task",
+            "actionItems": ["Specific action for this task"],
+            "subtasks": [
+              { 
+                "title": "Subtask for the second task", 
+                "estimatedMinutes": 10,
+                "context": "Context for this subtask" 
+              },
+              { 
+                "title": "Another subtask", 
+                "estimatedMinutes": 10,
+                "context": "Context for this subtask" 
+              }
+            ]
           }
         ],
-        "totalEstimatedMinutes": 50
+        "totalEstimatedMinutes": 50,
+        "overallSuggestions": "General recommendations for approaching this goal effectively, including potential roadblocks to watch for and strategies for success."
       }
       
-      Make all tasks and subtasks specific, actionable, and measurable. Don't be generic.
+      Make all tasks and subtasks specific, actionable, and measurable. Be detailed and practical.
       The total time should be the sum of all task estimated times.
+      Include DETAILED context for ALL tasks and subtasks to help the user understand how to approach them.
     `;
 
     const response = await openai.chat.completions.create({
@@ -99,26 +136,30 @@ export async function breakdownGoal(
 
     const parsedResponse = JSON.parse(content) as TaskBreakdownResponse;
     
-    // Transform to our data model with IDs and time estimates
+    // Transform to our data model with IDs, time estimates, and context
     const tasks: Task[] = parsedResponse.tasks.map(task => ({
       id: nanoid(),
       title: task.title,
       completed: false,
       estimatedMinutes: task.estimatedMinutes,
       complexity: task.complexity,
+      context: task.context,
+      actionItems: task.actionItems,
       subtasks: task.subtasks 
         ? task.subtasks.map(subtask => ({
             id: nanoid(),
             title: subtask.title,
             completed: false,
-            estimatedMinutes: subtask.estimatedMinutes
+            estimatedMinutes: subtask.estimatedMinutes,
+            context: subtask.context
           }))
         : []
     }));
 
     return {
       tasks,
-      totalEstimatedMinutes: parsedResponse.totalEstimatedMinutes
+      totalEstimatedMinutes: parsedResponse.totalEstimatedMinutes,
+      overallSuggestions: parsedResponse.overallSuggestions
     };
   } catch (error) {
     console.error("Error calling OpenAI:", error);
