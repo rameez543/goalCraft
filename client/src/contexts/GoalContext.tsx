@@ -4,7 +4,7 @@ import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Goal, GoalContextType, ProgressUpdateOptions, RoadblockOptions, NotificationChannel, UserSettings, ReminderFrequency } from '../types';
 import { saveGoalsToLocalStorage, getGoalsFromLocalStorage } from '../lib/localStorage';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../hooks/use-auth';
 
 const GoalContext = createContext<GoalContextType | undefined>(undefined);
 
@@ -13,7 +13,7 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
 
   // Fetch goals on initial load or when authentication state changes
   useEffect(() => {
@@ -48,7 +48,7 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     fetchGoals();
-  }, [isAuthenticated, user]);
+  }, [user]);
 
   // Save goals to localStorage whenever they change
   useEffect(() => {
@@ -69,16 +69,16 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(true);
       setError(null);
       
-      // Authentication check temporarily disabled
-      // if (!isAuthenticated) {
-      //   toast({
-      //     variant: 'destructive',
-      //     title: 'Authentication Required',
-      //     description: 'Please sign in to create a goal.',
-      //   });
-      //   setLoading(false);
-      //   return;
-      // }
+      // Authentication check using user object
+      if (!user) {
+        toast({
+          variant: 'destructive',
+          title: 'Authentication Required',
+          description: 'Please sign in to create a goal.',
+        });
+        setLoading(false);
+        return;
+      }
       
       const response = await apiRequest('POST', '/api/goals', {
         title,

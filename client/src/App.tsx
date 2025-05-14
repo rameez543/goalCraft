@@ -6,15 +6,18 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Settings from "@/pages/Settings";
+import AuthPage from "@/pages/AuthPage";
 import { GoalProvider } from "./contexts/GoalContext";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider } from "./hooks/use-auth";
 import { TabProvider } from "./contexts/TabContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/settings" component={Settings} />
+      <ProtectedRoute path="/" component={Home} />
+      <ProtectedRoute path="/settings" component={Settings} />
+      <Route path="/auth" component={AuthPage} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
@@ -26,12 +29,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <GoalProvider>
-            <TabProvider>
+          <TabProvider>
+            <GoalProvider>
               <Toaster />
               <Router />
-            </TabProvider>
-          </GoalProvider>
+            </GoalProvider>
+          </TabProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>

@@ -1,10 +1,31 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-// LoginButton temporarily disabled
-// import LoginButton from './LoginButton';
+import { useAuth } from '../hooks/use-auth';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { LogOut, User, Settings, HelpCircle } from 'lucide-react';
 
 const Header: React.FC = () => {
   const [location] = useLocation();
+  const { user, logoutMutation } = useAuth();
+  
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+  
+  // Get initials for avatar fallback
+  const getInitials = (name: string) => {
+    if (!name) return '?';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
   
   return (
     <header className="bg-white shadow-md sticky top-0 z-10">
@@ -39,7 +60,52 @@ const Header: React.FC = () => {
             <span className="text-lg">❓</span>
             <span className="ml-1 text-sm font-medium hidden sm:inline">Help</span>
           </button>
-          {/* Login button temporarily removed */}
+          
+          {/* User account dropdown or login button */}
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Avatar>
+                    {user.profilePicture ? (
+                      <img src={user.profilePicture} alt={user.displayName || user.username} />
+                    ) : (
+                      <AvatarFallback className="bg-blue-100 text-blue-600">
+                        {getInitials(user.displayName || user.username)}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  <span>Help</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link href="/auth">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                Login / Register
+              </Button>
+            </Link>
+          )}
         </nav>
       </div>
     </header>
