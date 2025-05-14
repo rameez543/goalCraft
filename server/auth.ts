@@ -118,23 +118,27 @@ export function setupAuth(app: express.Express) {
     }
   });
 
-  // Middleware to require login for API routes
-  app.use('/api/goals', ensureAuthenticated);
+  // Authentication middleware temporarily disabled
+  // app.use('/api/goals', ensureAuthenticated);
 }
 
 // Middleware to check if user is authenticated
 export function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
-  if (req.isAuthenticated()) {
-    return next();
-  }
+  // Authentication check temporarily disabled - always pass through
+  return next();
   
-  // Special case for GET requests to /api/goals
-  // If user is not authenticated, just return empty array instead of error
-  if (req.method === 'GET' && req.path === '/') {
-    return res.json([]);
-  }
-  
-  res.status(401).json({ message: 'Unauthorized' });
+  // Original authentication logic (commented out)
+  // if (req.isAuthenticated()) {
+  //   return next();
+  // }
+  // 
+  // // Special case for GET requests to /api/goals
+  // // If user is not authenticated, just return empty array instead of error
+  // if (req.method === 'GET' && req.path === '/') {
+  //   return res.json([]);
+  // }
+  // 
+  // res.status(401).json({ message: 'Unauthorized' });
 }
 
 // Middleware to check if user is authenticated for frontend
