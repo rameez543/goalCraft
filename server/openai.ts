@@ -26,7 +26,7 @@ export async function breakdownGoal(
   goalTitle: string, 
   timeConstraintMinutes?: number,
   additionalInfo?: string
-): Promise<{ tasks: Task[], totalEstimatedMinutes: number }> {
+): Promise<{ tasks: Task[], totalEstimatedMinutes: number, overallSuggestions?: string }> {
   try {
     let timeConstraintText = "";
     if (timeConstraintMinutes) {

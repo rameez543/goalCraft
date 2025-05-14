@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { breakdownGoal } from "./openai";
 import { createGoalSchema, updateTaskSchema, updateSubtaskSchema } from "@shared/schema";
+import { notifyGoalCreated, notifyTaskCompleted, NotificationChannel } from "./notifications";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
@@ -28,6 +29,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use anonymous user ID for all users temporarily
       const userId = "anonymous";
       
+      // Parse notification channels from request if provided
+      let notificationChannels: string[] = [];
+      if (req.body.notificationChannels && Array.isArray(req.body.notificationChannels)) {
+        notificationChannels = req.body.notificationChannels;
+      }
+      
       const goal = await storage.createGoal({
         title: validatedData.title,
         tasks,
@@ -38,10 +45,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timeConstraintMinutes: validatedData.timeConstraintMinutes,
         additionalInfo: validatedData.additionalInfo,
         overallSuggestions: overallSuggestions,
-        notificationChannels: [],
+        notificationChannels: notificationChannels,
         lastProgressUpdate: null,
         roadblocks: null
       });
+      
+      // Send notification asynchronously (don't await)
+      notifyGoalCreated(goal, notificationChannels as NotificationChannel[])
+        .catch(err => console.error("Failed to send goal creation notification:", err));
       
       res.status(201).json(goal);
     } catch (error) {
