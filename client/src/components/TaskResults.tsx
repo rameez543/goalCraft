@@ -55,7 +55,7 @@ const TaskResults: React.FC<TaskResultsProps> = ({
   const totalTasks = goal.tasks.length;
 
   return (
-    <Card className="bg-white rounded-xl shadow-md overflow-hidden mb-6 transition-all duration-300 hover:shadow-lg">
+    <Card id={`goal-${goal.id}`} className="bg-white rounded-xl shadow-md overflow-hidden mb-6 transition-all duration-300 hover:shadow-lg">
       <div className="p-5 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
         <div className="flex justify-between items-start">
           <div>

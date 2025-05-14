@@ -393,7 +393,21 @@ const GoalSummaryCard: React.FC<{ goal: Goal; showRoadblock?: boolean }> = ({ go
               className="text-sm gap-1"
               onClick={(e) => {
                 e.stopPropagation(); // Prevent card collapse when clicking button
-                window.location.href = `/tasks/${goal.id}`;
+                // Navigate to the "Goal Details" tab on the home page
+                const tabsElement = document.querySelector('[role="tablist"]');
+                if (tabsElement) {
+                  const goalDetailsTab = tabsElement.querySelector('[value="goals"]') as HTMLElement;
+                  if (goalDetailsTab) {
+                    goalDetailsTab.click();
+                    // Scroll to this specific goal
+                    setTimeout(() => {
+                      const goalElement = document.getElementById(`goal-${goal.id}`);
+                      if (goalElement) {
+                        goalElement.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }, 300);
+                  }
+                }
               }}
             >
               <span>View Full Details</span>
