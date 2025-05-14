@@ -546,6 +546,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // WhatsApp test message endpoint
+  app.post("/api/whatsapp/test", async (req: Request, res: Response) => {
+    try {
+      const { phoneNumber } = req.body;
+      
+      if (!phoneNumber) {
+        res.status(400).json({ message: "Phone number is required" });
+        return;
+      }
+      
+      // Import the WhatsApp service
+      const whatsappService = await import('./notifications/whatsapp');
+      
+      // Send a test message
+      const message = `🧪 *Test Message from TaskBreaker*\n\nThis is a test message to verify your WhatsApp notifications are working properly. Notification system is in development mode - this message is being logged to the console rather than sent via WhatsApp.`;
+      
+      const result = await whatsappService.sendWhatsAppMessage(phoneNumber, message);
+      
+      if (result) {
+        res.json({ 
+          success: true, 
+          message: "Test message sent successfully (logged to console in development mode)"
+        });
+      } else {
+        res.status(500).json({ message: "Failed to send test message" });
+      }
+    } catch (error) {
+      console.error("Error sending test WhatsApp message:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to send test message" 
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

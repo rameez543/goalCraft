@@ -203,21 +203,57 @@ export const NotificationSettings: React.FC = () => {
         {/* Test notification */}
         {whatsappEnabled && whatsappNumber && (
           <div className="pt-2 mt-2 border-t border-gray-100">
+            <div className="flex items-center p-3 mb-3 text-sm rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              <span>
+                <strong>WhatsApp Business API needed:</strong> Currently in development mode (messages are logged to console). 
+                Integration with MessageBird, Infobip, or Meta's WhatsApp Business API required for production use.
+              </span>
+            </div>
+
             <Button 
               variant="outline" 
               size="sm"
               disabled={isSubmitting}
-              onClick={() => {
-                toast({
-                  title: 'Test notification sent',
-                  description: `A test message was sent to ${whatsappNumber}`,
-                });
+              onClick={async () => {
+                try {
+                  // Call the test endpoint that will log a message to the console
+                  const response = await fetch('/api/whatsapp/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phoneNumber: whatsappNumber })
+                  });
+                  
+                  const data = await response.json();
+                  
+                  if (response.ok) {
+                    toast({
+                      title: 'Test notification sent',
+                      description: `A test message for ${whatsappNumber} was logged to the server console`,
+                    });
+                  } else {
+                    toast({
+                      variant: 'destructive',
+                      title: 'Error sending test',
+                      description: data.message || 'Failed to send test message'
+                    });
+                  }
+                } catch (error) {
+                  console.error('Error sending test WhatsApp message:', error);
+                  toast({
+                    variant: 'destructive',
+                    title: 'Error',
+                    description: 'Could not connect to the server'
+                  });
+                }
               }}
             >
               Send Test Notification
             </Button>
             <p className="mt-2 text-xs text-gray-500">
-              This will send a test message to verify your WhatsApp number works correctly
+              This will log a test message to the server console. In production with a WhatsApp Business API provider configured (like MessageBird, Infobip, etc.), messages would be sent to your WhatsApp number.
             </p>
           </div>
         )}

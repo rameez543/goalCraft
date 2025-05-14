@@ -2,34 +2,60 @@ import { Goal, Task } from "@shared/schema";
 import axios from "axios";
 
 /**
- * WhatsApp message sending via Twilio or similar service
- * This can be replaced with any WhatsApp business API provider
+ * WhatsApp message sending using a WhatsApp Business API provider
+ * Multiple providers are available for integration:
+ * 1. MessageBird - https://messagebird.com/products/whatsapp-api
+ * 2. Infobip - https://www.infobip.com/whatsapp-business
+ * 3. Meta's WhatsApp Business API - https://developers.facebook.com/docs/whatsapp/api/reference
+ * 4. MessengerPeople by Sinch - https://www.sinch.com/products/messaging/whatsapp
  */
 export async function sendWhatsAppMessage(
   to: string,
   message: string
 ): Promise<boolean> {
   try {
-    // This would typically use Twilio or similar API
-    // For now, we'll just log the message for development
+    // In development mode, just log the message
     console.log(`[WhatsApp] To: ${to}, Message: ${message}`);
     
-    // TODO: Replace with actual WhatsApp API implementation
-    // Example with Twilio:
-    // const response = await axios.post(
-    //   `https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`,
-    //   new URLSearchParams({
-    //     To: `whatsapp:${to}`,
-    //     From: `whatsapp:${process.env.TWILIO_PHONE_NUMBER}`,
-    //     Body: message
-    //   }),
-    //   {
-    //     auth: {
-    //       username: process.env.TWILIO_ACCOUNT_SID || '',
-    //       password: process.env.TWILIO_AUTH_TOKEN || ''
+    // Implementation depends on chosen provider
+    // Examples for different providers:
+    
+    // Option 1: MessageBird
+    // if (process.env.MESSAGEBIRD_API_KEY) {
+    //   const response = await axios.post(
+    //     'https://conversations.messagebird.com/v1/send',
+    //     {
+    //       to: to,
+    //       from: process.env.WHATSAPP_CHANNEL_ID,
+    //       type: 'text',
+    //       content: { text: message }
+    //     },
+    //     {
+    //       headers: {
+    //         'Authorization': `AccessKey ${process.env.MESSAGEBIRD_API_KEY}`,
+    //         'Content-Type': 'application/json'
+    //       }
     //     }
-    //   }
-    // );
+    //   );
+    // }
+    
+    // Option 2: Infobip
+    // if (process.env.INFOBIP_API_KEY) {
+    //   const response = await axios.post(
+    //     `https://api.infobip.com/whatsapp/1/message/text`,
+    //     {
+    //       from: process.env.WHATSAPP_PHONE_NUMBER,
+    //       to: to,
+    //       messageText: message
+    //     },
+    //     {
+    //       headers: {
+    //         'Authorization': `App ${process.env.INFOBIP_API_KEY}`,
+    //         'Content-Type': 'application/json'
+    //       }
+    //     }
+    //   );
+    // }
     
     return true;
   } catch (error) {

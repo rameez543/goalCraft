@@ -485,11 +485,11 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('userSettings', JSON.stringify(updatedSettings));
       
       // Send settings to the server
-      await apiRequest({
-        url: '/api/user/settings',
-        method: 'PATCH',
-        data: updatedSettings
-      });
+      await apiRequest(
+        'PATCH',
+        '/api/user/settings', 
+        updatedSettings
+      );
       
       // For whatsapp notification specifically, update each task with the new settings
       if (settings.whatsappNumber && settings.enableWhatsappNotifications) {
