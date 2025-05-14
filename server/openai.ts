@@ -250,6 +250,9 @@ Always maintain a helpful, encouraging tone while providing highly detailed, act
       addedToCalendar: false,
       reminderEnabled: false,
       reminderTime: undefined,
+      enableWhatsapp: false,
+      whatsappNumber: undefined,
+      reminderFrequency: 'task-only',
       subtasks: task.subtasks 
         ? task.subtasks.map(subtask => ({
             id: nanoid(),

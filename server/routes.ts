@@ -518,6 +518,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // User settings update endpoint
+  app.patch("/api/user/settings", async (req: Request, res: Response) => {
+    try {
+      // In a real app, this would save to user's profile in the database
+      // For now, we'll just return success since settings are stored in localStorage
+      
+      const settings = req.body;
+      
+      // Validate settings
+      if (settings.enableWhatsappNotifications && !settings.whatsappNumber) {
+        res.status(400).json({ message: "WhatsApp number is required when notifications are enabled" });
+        return;
+      }
+      
+      // Return success response
+      res.json({ 
+        success: true, 
+        message: "Settings updated successfully",
+        settings
+      });
+    } catch (error) {
+      console.error("Error updating user settings:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to update user settings" 
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

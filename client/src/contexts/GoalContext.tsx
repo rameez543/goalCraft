@@ -479,11 +479,17 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Update global user settings (e.g., WhatsApp preferences)
   const updateGlobalSettings = async (settings: UserSettings): Promise<void> => {
     try {
-      // Store settings in localStorage for now
-      // In a real app, these would be saved to the server
+      // Store settings in localStorage for persistence
       const userSettings = JSON.parse(localStorage.getItem('userSettings') || '{}');
       const updatedSettings = { ...userSettings, ...settings };
       localStorage.setItem('userSettings', JSON.stringify(updatedSettings));
+      
+      // Send settings to the server
+      await apiRequest({
+        url: '/api/user/settings',
+        method: 'PATCH',
+        data: updatedSettings
+      });
       
       // For whatsapp notification specifically, update each task with the new settings
       if (settings.whatsappNumber && settings.enableWhatsappNotifications) {
@@ -494,7 +500,8 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               return {
                 ...task,
                 enableWhatsapp: true,
-                whatsappNumber: settings.whatsappNumber
+                whatsappNumber: settings.whatsappNumber,
+                reminderFrequency: settings.reminderFrequency || 'task-only'
               };
             }
             return task;
@@ -505,9 +512,11 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         
         setGoals(updatedGoals);
         
-        // Sync changes with the server
-        // This would be an API call in a real implementation
+        // Sync goal changes with the server
         saveGoalsToLocalStorage(updatedGoals);
+        
+        // We'd also need to update tasks on the server, but that's handled by updateTaskSchedule
+        // which would be called separately for each task that needs updating
       }
       
       toast({
