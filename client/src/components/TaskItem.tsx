@@ -1,13 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import SubtaskItem from './SubtaskItem';
 import { Task } from '../types';
+import { format } from 'date-fns';
+import { TaskScheduler } from './TaskScheduler';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 interface TaskItemProps {
   task: Task;
   goalId: number;
   onToggleTaskComplete: (goalId: number, taskId: string, completed: boolean) => Promise<void>;
   onToggleSubtaskComplete: (goalId: number, taskId: string, subtaskId: string, completed: boolean) => Promise<void>;
+  onUpdateTaskSchedule?: (
+    goalId: number, 
+    taskId: string, 
+    updates: { 
+      dueDate?: string; 
+      addedToCalendar?: boolean;
+      reminderEnabled?: boolean;
+      reminderTime?: string;
+    }
+  ) => Promise<void>;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({
@@ -15,9 +34,33 @@ const TaskItem: React.FC<TaskItemProps> = ({
   goalId,
   onToggleTaskComplete,
   onToggleSubtaskComplete,
+  onUpdateTaskSchedule,
 }) => {
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+
   const handleToggle = async (checked: boolean) => {
     await onToggleTaskComplete(goalId, task.id, checked);
+  };
+
+  const handleUpdateDueDate = async (dueDate: string | undefined) => {
+    if (onUpdateTaskSchedule) {
+      await onUpdateTaskSchedule(goalId, task.id, { dueDate });
+    }
+  };
+
+  const handleAddToCalendar = async (add: boolean) => {
+    if (onUpdateTaskSchedule) {
+      await onUpdateTaskSchedule(goalId, task.id, { addedToCalendar: add });
+    }
+  };
+
+  const handleEnableReminder = async (enabled: boolean, reminderTime?: string) => {
+    if (onUpdateTaskSchedule) {
+      await onUpdateTaskSchedule(goalId, task.id, { 
+        reminderEnabled: enabled,
+        reminderTime
+      });
+    }
   };
 
   return (
@@ -42,8 +85,8 @@ const TaskItem: React.FC<TaskItemProps> = ({
               {task.title}
             </label>
             
-            {/* Time and Complexity Information */}
-            <div className="flex items-center space-x-3 mt-1 text-xs">
+            {/* Time, Complexity, and Due Date Information */}
+            <div className="flex items-center space-x-3 mt-1 text-xs flex-wrap">
               {task.estimatedMinutes && (
                 <span className="flex items-center text-blue-600">
                   <svg 
@@ -73,6 +116,46 @@ const TaskItem: React.FC<TaskItemProps> = ({
                   {task.complexity} complexity
                 </span>
               )}
+              
+              {task.dueDate && (
+                <span className="flex items-center text-purple-600">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-4 w-4 mr-1" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" 
+                    />
+                  </svg>
+                  Due: {format(new Date(task.dueDate), 'MMM d, yyyy')}
+                </span>
+              )}
+              
+              {task.addedToCalendar && (
+                <span className="flex items-center text-green-600">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-4 w-4 mr-1" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" 
+                    />
+                  </svg>
+                  In Calendar
+                </span>
+              )}
             </div>
           </div>
 
@@ -92,7 +175,39 @@ const TaskItem: React.FC<TaskItemProps> = ({
           )}
         </div>
         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1">
-          <button className="p-1 text-gray-400 hover:text-gray-700 rounded">
+          <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
+            <DialogTrigger asChild>
+              <button className="p-1 text-gray-400 hover:text-purple-600 rounded" title="Schedule Task">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Schedule Task</DialogTitle>
+              </DialogHeader>
+              <TaskScheduler 
+                task={task}
+                onUpdateDueDate={handleUpdateDueDate}
+                onAddToCalendar={handleAddToCalendar}
+                onEnableReminder={handleEnableReminder}
+              />
+            </DialogContent>
+          </Dialog>
+          
+          <button className="p-1 text-gray-400 hover:text-gray-700 rounded" title="Edit Task">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5"
