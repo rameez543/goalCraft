@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { breakdownGoal } from "./openai";
+import { generateCoachingMessage, generateRoadblockTips } from "./ai-coach";
 import { 
   createGoalSchema, 
   updateTaskSchema, 
@@ -332,6 +333,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error reporting roadblock:", error);
       res.status(500).json({ 
         message: error instanceof Error ? error.message : "Failed to report roadblock" 
+      });
+    }
+  });
+
+  // Get an AI coaching message
+  app.get("/api/coach/message", async (req: Request, res: Response) => {
+    try {
+      // Get all goals to analyze
+      const goals = await storage.getGoals();
+      
+      // Get user name if authenticated (currently anonymous)
+      const userName = "there"; // Use "there" as default
+      
+      // Generate the coaching message
+      const coachMessage = await generateCoachingMessage(goals, userName);
+      
+      res.json(coachMessage);
+    } catch (error) {
+      console.error("Error generating coaching message:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to generate coaching message",
+        type: "encouragement" 
+      });
+    }
+  });
+  
+  // Get AI tips for overcoming a roadblock
+  app.get("/api/coach/roadblock-tips/:goalId", async (req: Request, res: Response) => {
+    try {
+      const goalId = parseInt(req.params.goalId);
+      if (isNaN(goalId)) {
+        res.status(400).json({ message: "Invalid goal ID" });
+        return;
+      }
+      
+      // Get the goal
+      const goal = await storage.getGoal(goalId);
+      if (!goal) {
+        res.status(404).json({ message: "Goal not found" });
+        return;
+      }
+      
+      // Check if the goal has a roadblock
+      if (!goal.roadblocks) {
+        res.status(400).json({ message: "No roadblock reported for this goal" });
+        return;
+      }
+      
+      // Generate tips for overcoming the roadblock
+      const tips = await generateRoadblockTips(goal);
+      
+      res.json({ tips });
+    } catch (error) {
+      console.error("Error generating roadblock tips:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to generate roadblock tips" 
       });
     }
   });
