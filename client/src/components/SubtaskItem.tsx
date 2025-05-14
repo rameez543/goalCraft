@@ -3,6 +3,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Subtask } from '../types';
 import { format } from 'date-fns';
 import { TaskScheduler } from './TaskScheduler';
+import { SubtaskEditDialog } from './SubtaskEditDialog';
 import { 
   Dialog,
   DialogContent,

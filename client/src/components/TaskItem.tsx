@@ -5,6 +5,7 @@ import { Task, ReminderFrequency } from '../types';
 import { format } from 'date-fns';
 import { TaskScheduler } from './TaskScheduler';
 import { TaskDiscussion } from './TaskDiscussion';
+import { TaskEditDialog } from './TaskEditDialog';
 import { 
   Dialog,
   DialogContent,
@@ -54,6 +55,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
 }) => {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [isDiscussDialogOpen, setIsDiscussDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const handleToggle = async (checked: boolean) => {
     await onToggleTaskComplete(goalId, task.id, checked);
@@ -256,22 +258,71 @@ const TaskItem: React.FC<TaskItemProps> = ({
             </DialogContent>
           </Dialog>
           
-          <button className="p-1 text-gray-400 hover:text-gray-700 rounded" title="Edit Task">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+          <Dialog open={isDiscussDialogOpen} onOpenChange={setIsDiscussDialogOpen}>
+            <DialogTrigger asChild>
+              <button className="p-1 text-gray-400 hover:text-green-600 rounded" title="Discuss with AI">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+              </button>
+            </DialogTrigger>
+            <DialogContent className="w-[95vw] max-w-3xl">
+              <DialogHeader>
+                <DialogTitle>💬 Discuss Task with AI</DialogTitle>
+              </DialogHeader>
+              <TaskDiscussion 
+                goalId={goalId}
+                taskId={task.id}
+                taskTitle={task.title}
               />
-            </svg>
-          </button>
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogTrigger asChild>
+              <button className="p-1 text-gray-400 hover:text-amber-600 rounded" title="Edit Task">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                  />
+                </svg>
+              </button>
+            </DialogTrigger>
+            <DialogContent className="w-[90vw] md:max-w-md">
+              <DialogHeader>
+                <DialogTitle>✏️ Edit Task</DialogTitle>
+              </DialogHeader>
+              <TaskEditDialog 
+                goalId={goalId}
+                task={task}
+                onClose={() => setIsEditDialogOpen(false)}
+                onTaskUpdated={() => {
+                  // This would typically trigger a refetch of the goals
+                  // but we'll leave that to the parent component
+                }}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </li>
