@@ -13,6 +13,25 @@ interface TaskResultsProps {
   onDeleteGoal: (id: number) => Promise<void>;
   onToggleTaskComplete: (goalId: number, taskId: string, completed: boolean) => Promise<void>;
   onToggleSubtaskComplete: (goalId: number, taskId: string, subtaskId: string, completed: boolean) => Promise<void>;
+  onUpdateTaskSchedule?: (
+    goalId: number, 
+    taskId: string, 
+    updates: { 
+      dueDate?: string; 
+      addedToCalendar?: boolean;
+      reminderEnabled?: boolean;
+      reminderTime?: string;
+    }
+  ) => Promise<void>;
+  onUpdateSubtaskSchedule?: (
+    goalId: number, 
+    taskId: string, 
+    subtaskId: string,
+    updates: { 
+      dueDate?: string; 
+      addedToCalendar?: boolean;
+    }
+  ) => Promise<void>;
 }
 
 const TaskResults: React.FC<TaskResultsProps> = ({
@@ -20,6 +39,8 @@ const TaskResults: React.FC<TaskResultsProps> = ({
   onDeleteGoal,
   onToggleTaskComplete,
   onToggleSubtaskComplete,
+  onUpdateTaskSchedule,
+  onUpdateSubtaskSchedule,
 }) => {
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this goal?')) {
@@ -174,6 +195,7 @@ const TaskResults: React.FC<TaskResultsProps> = ({
               goalId={goal.id}
               onToggleTaskComplete={onToggleTaskComplete}
               onToggleSubtaskComplete={onToggleSubtaskComplete}
+              onUpdateTaskSchedule={onUpdateTaskSchedule}
             />
           ))}
         </ul>

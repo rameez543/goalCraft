@@ -27,6 +27,15 @@ interface TaskItemProps {
       reminderTime?: string;
     }
   ) => Promise<void>;
+  onUpdateSubtaskSchedule?: (
+    goalId: number, 
+    taskId: string, 
+    subtaskId: string,
+    updates: { 
+      dueDate?: string; 
+      addedToCalendar?: boolean;
+    }
+  ) => Promise<void>;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({
