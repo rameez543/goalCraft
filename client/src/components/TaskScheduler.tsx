@@ -110,11 +110,11 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
     <div className="flex flex-col space-y-6">
       {/* Show task/subtask details */}
       <div className="space-y-2">
-        <h3 className="text-base font-medium">
+        <h3 className="text-base font-medium break-words">
           {subtask ? 'Subtask' : 'Task'}: {subtask ? subtask.title : task.title}
         </h3>
         {(subtask?.context || task.context) && (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 break-words">
             {subtask ? subtask.context : task.context}
           </p>
         )}
@@ -138,13 +138,15 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
             </Button>
           )}
         </div>
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={handleCalendarChange}
-          className="border rounded-md p-3"
-          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-        />
+        <div className="overflow-auto max-w-full pb-2">
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={handleCalendarChange}
+            className="border rounded-md p-3 min-w-[280px] mx-auto"
+            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+          />
+        </div>
         {date && (
           <p className="text-sm text-blue-600 mt-2">
             Selected date: {format(date, 'PPP')}
@@ -203,10 +205,11 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
             <Label htmlFor="whatsapp-number" className="text-sm font-medium">
               WhatsApp Number
             </Label>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 id="whatsapp-number"
                 type="tel"
+                inputMode="tel"
                 placeholder="+1 (555) 555-5555"
                 value={whatsappNumber}
                 onChange={handleWhatsappNumberChange}
@@ -217,15 +220,15 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={handleSaveWhatsappNumber}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap sm:w-auto w-full"
               >
-                Save
+                Save Number
               </Button>
             </div>
             {whatsappSaved && (
               <p className="text-xs text-green-600 flex items-center mt-1">
                 <span className="mr-1">✓</span> 
-                WhatsApp saved for task notifications
+                WhatsApp notifications enabled for this task
               </p>
             )}
           </div>
@@ -257,13 +260,24 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
               <Label htmlFor="reminder-time" className="text-sm font-medium">
                 Reminder Time
               </Label>
-              <input
-                id="reminder-time"
-                type="time"
-                value={reminderTime}
-                onChange={handleReminderTimeChange}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              />
+              <div className="flex items-center">
+                <input
+                  id="reminder-time"
+                  type="time"
+                  value={reminderTime}
+                  onChange={handleReminderTimeChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                />
+                <div className="ml-3 text-sm text-gray-500">
+                  {reminderTime && new Date(`2000-01-01T${reminderTime}`).toLocaleTimeString([], {
+                    hour: 'numeric',
+                    minute: '2-digit'
+                  })}
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                You'll receive a notification at this time on the due date
+              </p>
             </div>
           )}
         </div>
