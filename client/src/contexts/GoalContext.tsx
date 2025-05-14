@@ -66,15 +66,16 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(true);
       setError(null);
       
-      if (!isAuthenticated) {
-        toast({
-          variant: 'destructive',
-          title: 'Authentication Required',
-          description: 'Please sign in to create a goal.',
-        });
-        setLoading(false);
-        return;
-      }
+      // Authentication check temporarily disabled
+      // if (!isAuthenticated) {
+      //   toast({
+      //     variant: 'destructive',
+      //     title: 'Authentication Required',
+      //     description: 'Please sign in to create a goal.',
+      //   });
+      //   setLoading(false);
+      //   return;
+      // }
       
       const response = await apiRequest('POST', '/api/goals', {
         title,

@@ -20,10 +20,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedData.additionalInfo
       );
       
-      // Create and store the goal with user info if available
-      const userId = req.isAuthenticated() && req.user 
-        ? (req.user as any).username || "anonymous"
-        : "anonymous";
+      // Authentication temporarily disabled
+      // const userId = req.isAuthenticated() && req.user 
+      //   ? (req.user as any).username || "anonymous"
+      //   : "anonymous";
+      
+      // Use anonymous user ID for all users temporarily
+      const userId = "anonymous";
       
       const goal = await storage.createGoal({
         title: validatedData.title,
@@ -54,16 +57,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all goals
   app.get("/api/goals", async (req: Request, res: Response) => {
     try {
-      // If user is authenticated, filter goals by userId
+      // Authentication temporarily disabled - always return all goals
       let goals;
       
-      if (req.isAuthenticated() && req.user) {
-        const userId = (req.user as any).username || "anonymous";
-        goals = await storage.getGoals(userId);
-      } else {
-        // Return empty array if not authenticated
-        goals = [];
-      }
+      // if (req.isAuthenticated() && req.user) {
+      //   const userId = (req.user as any).username || "anonymous";
+      //   goals = await storage.getGoals(userId);
+      // } else {
+      //   // Return empty array if not authenticated
+      //   goals = [];
+      // }
+      
+      // Temporarily get all goals without authentication
+      goals = await storage.getGoals();
       
       res.json(goals);
     } catch (error) {
