@@ -1,49 +1,30 @@
-import React, { useState } from "react";
-import { useAuth } from "../hooks/use-auth";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Redirect } from "wouter";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useAuth } from '@/hooks/use-auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { Redirect } from 'wouter';
 
-// Form validation schemas
+// Validation schemas
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().email({ message: 'Please enter a valid email address' }),
+  password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
 });
 
 const registerSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+  username: z.string().min(3, { message: 'Username must be at least 3 characters' }),
+  email: z.string().email({ message: 'Please enter a valid email address' }),
+  password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+  confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
-  path: ["confirmPassword"],
+  path: ['confirmPassword'],
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -51,243 +32,209 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const AuthPage: React.FC = () => {
   const { user, loginMutation, registerMutation } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>("login");
+  const { toast } = useToast();
 
-  // If already logged in, redirect to home
+  // Login form
+  const loginForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+
+  // Register form
+  const registerForm = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+  });
+
+  const onLoginSubmit = (values: LoginFormValues) => {
+    loginMutation.mutate(values);
+  };
+
+  const onRegisterSubmit = (values: RegisterFormValues) => {
+    // Remove confirmPassword as it's not needed in the API call
+    const { confirmPassword, ...registerData } = values;
+    registerMutation.mutate(registerData);
+  };
+
+  // Redirect if already logged in
   if (user) {
     return <Redirect to="/" />;
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      {/* Left Column - Forms */}
-      <div className="flex flex-col items-center justify-center w-full lg:w-1/2 px-4 py-12">
-        <div className="w-full max-w-md">
-          <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
-            TaskBreaker
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-4">
+      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8 items-center">
+        {/* Hero Section */}
+        <div className="space-y-6 hidden md:block">
+          <h1 className="text-4xl font-bold tracking-tight">
+            <span className="bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+              TaskBreaker
+            </span>
           </h1>
-          
-          <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
+          <p className="text-xl text-muted-foreground">
+            Break down your complex goals into simple, actionable tasks.
+          </p>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-primary">✓</span>
+              </div>
+              <p>AI-powered task breakdown</p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-primary">✓</span>
+              </div>
+              <p>Time estimation for better planning</p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-primary">✓</span>
+              </div>
+              <p>Personalized AI coach for motivation</p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-primary">✓</span>
+              </div>
+              <p>Multi-device access with your account</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Auth Forms */}
+        <Card className="w-full max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">
+              <span className="md:hidden bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+                TaskBreaker
+              </span>
+              <span className="block mt-4">Welcome</span>
+            </CardTitle>
+            <CardDescription className="text-center">
+              Sign in to your account or create a new one
+            </CardDescription>
+          </CardHeader>
+          <Tabs defaultValue="login" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="register">Register</TabsTrigger>
             </TabsList>
-            
+
+            {/* Login Tab */}
             <TabsContent value="login">
-              <LoginForm />
+              <form onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
+                <CardContent className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      placeholder="your.email@example.com"
+                      {...loginForm.register('email')}
+                    />
+                    {loginForm.formState.errors.email && (
+                      <p className="text-sm text-destructive">{loginForm.formState.errors.email.message}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      {...loginForm.register('password')}
+                    />
+                    {loginForm.formState.errors.password && (
+                      <p className="text-sm text-destructive">{loginForm.formState.errors.password.message}</p>
+                    )}
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={loginMutation.isPending}
+                  >
+                    {loginMutation.isPending ? 'Signing in...' : 'Sign In'}
+                  </Button>
+                </CardFooter>
+              </form>
             </TabsContent>
-            
+
+            {/* Register Tab */}
             <TabsContent value="register">
-              <RegisterForm />
+              <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)}>
+                <CardContent className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input
+                      id="username"
+                      placeholder="johndoe"
+                      {...registerForm.register('username')}
+                    />
+                    {registerForm.formState.errors.username && (
+                      <p className="text-sm text-destructive">{registerForm.formState.errors.username.message}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      placeholder="your.email@example.com"
+                      {...registerForm.register('email')}
+                    />
+                    {registerForm.formState.errors.email && (
+                      <p className="text-sm text-destructive">{registerForm.formState.errors.email.message}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      {...registerForm.register('password')}
+                    />
+                    {registerForm.formState.errors.password && (
+                      <p className="text-sm text-destructive">{registerForm.formState.errors.password.message}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      {...registerForm.register('confirmPassword')}
+                    />
+                    {registerForm.formState.errors.confirmPassword && (
+                      <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message}</p>
+                    )}
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={registerMutation.isPending}
+                  >
+                    {registerMutation.isPending ? 'Creating account...' : 'Create Account'}
+                  </Button>
+                </CardFooter>
+              </form>
             </TabsContent>
           </Tabs>
-        </div>
-      </div>
-      
-      {/* Right Column - Hero */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 text-white">
-        <div className="max-w-xl mx-auto px-12 py-24 flex flex-col justify-center">
-          <h2 className="text-4xl font-bold mb-8">Break down your goals into achievable tasks</h2>
-          <p className="text-xl mb-6">TaskBreaker helps you turn big goals into manageable steps with AI-powered task breakdown and accountability tools.</p>
-          <ul className="space-y-4 text-lg">
-            <li className="flex items-start">
-              <span className="mr-3 mt-1">✓</span>
-              <span>AI breaks down goals into actionable tasks with time estimates</span>
-            </li>
-            <li className="flex items-start">
-              <span className="mr-3 mt-1">✓</span>
-              <span>Set reminders and track your progress</span>
-            </li>
-            <li className="flex items-start">
-              <span className="mr-3 mt-1">✓</span>
-              <span>Get personalized coaching and motivation</span>
-            </li>
-            <li className="flex items-start">
-              <span className="mr-3 mt-1">✓</span>
-              <span>Access your tasks across all your devices</span>
-            </li>
-          </ul>
-        </div>
+        </Card>
       </div>
     </div>
-  );
-};
-
-const LoginForm = () => {
-  const { loginMutation } = useAuth();
-  
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-  
-  const onSubmit = (values: LoginFormValues) => {
-    loginMutation.mutate({
-      email: values.email,
-      password: values.password,
-    });
-  };
-  
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Welcome back</CardTitle>
-        <CardDescription>
-          Login to your account to access your goals and tasks
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="your.email@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="********" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loginMutation.isPending}
-            >
-              {loginMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Logging in...
-                </>
-              ) : (
-                "Login"
-              )}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
-  );
-};
-
-const RegisterForm = () => {
-  const { registerMutation } = useAuth();
-  
-  const form = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      username: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
-  });
-  
-  const onSubmit = (values: RegisterFormValues) => {
-    const { confirmPassword, ...registrationData } = values;
-    registerMutation.mutate(registrationData);
-  };
-  
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Create your account</CardTitle>
-        <CardDescription>
-          Register to start tracking your goals and tasks
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input placeholder="johndoe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="your.email@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="********" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="********" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={registerMutation.isPending}
-            >
-              {registerMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                "Register"
-              )}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
   );
 };
 
