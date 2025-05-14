@@ -21,6 +21,17 @@ const Dashboard: React.FC = () => {
   
   // Get goals that need attention (less than 20% progress or have roadblocks)
   const needAttentionGoals = goals.filter(goal => goal.progress < 20 || goal.roadblocks);
+  
+  // Get most productive goals (highest progress)
+  const topProgressGoals = [...goals].sort((a, b) => b.progress - a.progress).slice(0, 3);
+  
+  // Prepare progress data for visualization
+  const progressBreakdown = [
+    { label: '0-25%', count: goals.filter(g => g.progress <= 25).length, color: 'bg-red-400' },
+    { label: '26-50%', count: goals.filter(g => g.progress > 25 && g.progress <= 50).length, color: 'bg-yellow-400' },
+    { label: '51-75%', count: goals.filter(g => g.progress > 50 && g.progress <= 75).length, color: 'bg-blue-400' },
+    { label: '76-100%', count: goals.filter(g => g.progress > 75).length, color: 'bg-green-400' }
+  ];
 
   if (loading) {
     return (
@@ -40,12 +51,54 @@ const Dashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
-              <Progress value={overallProgress} className="h-2 flex-1 mr-4" />
+              <Progress 
+                value={overallProgress} 
+                className="h-2 flex-1 mr-4" 
+                style={{
+                  background: 'linear-gradient(to right, #f3f4f6, #f3f4f6)',
+                  boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.05)'
+                }}
+              />
               <span className="text-2xl font-bold">{overallProgress}%</span>
             </div>
             <p className="text-sm text-gray-500 mt-2">
               {goals.length} active goal{goals.length !== 1 ? 's' : ''}
             </p>
+            
+            {/* Progress Breakdown */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <h4 className="text-xs font-medium text-gray-500 mb-2">Progress Breakdown</h4>
+              <div className="flex items-center space-x-1 h-6">
+                {progressBreakdown.map((segment, i) => (
+                  <div 
+                    key={i}
+                    className={`h-full ${segment.color} rounded-sm flex-grow`} 
+                    style={{ 
+                      flexBasis: `${(segment.count / (goals.length || 1)) * 100}%`,
+                      flexGrow: segment.count > 0 ? 1 : 0,
+                      minWidth: segment.count > 0 ? '1.5rem' : '0',
+                      opacity: 0.85
+                    }}
+                  />
+                ))}
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                {progressBreakdown.map((segment, i) => (
+                  <div key={i} className="text-center">
+                    <span className={segment.count > 0 ? 'font-medium' : ''}>
+                      {segment.count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between text-[10px] text-gray-400">
+                {progressBreakdown.map((segment, i) => (
+                  <div key={i}>
+                    {segment.label}
+                  </div>
+                ))}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -63,6 +116,23 @@ const Dashboard: React.FC = () => {
                   : `Goal${goalsWithRoadblocks.length !== 1 ? 's' : ''} with roadblocks`}
               </div>
             </div>
+            
+            {/* Roadblocks List Preview */}
+            {goalsWithRoadblocks.length > 0 && (
+              <div className="mt-4 space-y-3 max-h-24 overflow-y-auto">
+                {goalsWithRoadblocks.slice(0, 2).map(goal => (
+                  <div key={goal.id} className="p-2 bg-red-50 rounded-md border border-red-100">
+                    <div className="text-xs font-medium text-red-800 truncate">{goal.title}</div>
+                    <div className="text-xs text-red-600 line-clamp-1 mt-1">{goal.roadblocks}</div>
+                  </div>
+                ))}
+                {goalsWithRoadblocks.length > 2 && (
+                  <div className="text-xs text-center text-red-500">
+                    +{goalsWithRoadblocks.length - 2} more roadblocks
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -80,9 +150,86 @@ const Dashboard: React.FC = () => {
                 Total estimated time
               </div>
             </div>
+            
+            {/* Top Performing Goals */}
+            {goals.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <h4 className="text-xs font-medium text-gray-500 mb-2">Top Progress</h4>
+                {topProgressGoals.map(goal => (
+                  <div key={goal.id} className="flex items-center mb-2">
+                    <div 
+                      className="w-10 h-2 mr-2 rounded-sm bg-gradient-to-r from-green-400 to-blue-500"
+                      style={{ width: `${Math.max(goal.progress, 5)}%` }}
+                    ></div>
+                    <div className="mr-2 text-xs font-medium">{goal.progress}%</div>
+                    <div className="text-xs text-gray-500 truncate">{goal.title}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Progress Timeline Visualization */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-medium">Progress Timeline</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Overall Progress Bar */}
+            <div className="flex items-center space-x-2">
+              <div className="text-xs text-gray-500 w-20">All Goals</div>
+              <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-blue-500 to-violet-500 rounded-full"
+                  style={{ width: `${overallProgress}%` }}
+                ></div>
+              </div>
+              <div className="text-xs font-medium w-12 text-right">{overallProgress}%</div>
+            </div>
+            
+            {/* Divider */}
+            <div className="border-t border-gray-100"></div>
+            
+            {/* Individual Goal Progress Bars */}
+            <div className="space-y-3">
+              {sortedGoals.map(goal => {
+                const completedTasks = goal.tasks.filter(t => t.completed).length;
+                const totalTasks = goal.tasks.length;
+                
+                // Choose color based on progress
+                let progressColor = 'from-red-400 to-red-500';
+                if (goal.progress > 75) progressColor = 'from-green-400 to-green-500';
+                else if (goal.progress > 50) progressColor = 'from-blue-400 to-blue-500';
+                else if (goal.progress > 25) progressColor = 'from-yellow-400 to-yellow-500';
+                
+                return (
+                  <div key={goal.id} className="flex items-center space-x-2">
+                    <div className="text-xs text-gray-500 w-20 truncate">{goal.title}</div>
+                    <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
+                      <div 
+                        className={`h-full bg-gradient-to-r ${progressColor} rounded-full`}
+                        style={{ width: `${goal.progress}%` }}
+                      ></div>
+                    </div>
+                    <div className="text-xs font-medium w-12 text-right">
+                      {completedTasks}/{totalTasks} tasks
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {goals.length === 0 && (
+                <div className="text-center py-6 text-sm text-gray-500">
+                  No goals yet. Create your first goal to track progress!
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="all" className="w-full">
         <TabsList>
