@@ -148,34 +148,53 @@ export const RoadblockTips: React.FC<RoadblockTipsProps> = ({ goalId }) => {
 
   if (isLoading) {
     return (
-      <div className="p-4 bg-gray-50 rounded-md animate-pulse">
-        <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
-        <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
-        <div className="h-3 bg-gray-200 rounded w-5/6 mb-2"></div>
-        <div className="h-3 bg-gray-200 rounded w-4/5"></div>
+      <div className="p-5 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg shadow-sm animate-pulse border border-gray-200">
+        <div className="flex items-center mb-3">
+          <div className="w-8 h-8 bg-gray-200 rounded-full mr-3"></div>
+          <div className="h-4 bg-gray-200 rounded-full w-3/4"></div>
+        </div>
+        <div className="h-3 bg-gray-200 rounded-full w-full mb-3"></div>
+        <div className="h-3 bg-gray-200 rounded-full w-5/6 mb-3"></div>
+        <div className="h-3 bg-gray-200 rounded-full w-4/5"></div>
       </div>
     );
   }
 
   if (isError || !tipsData || !tipsData.tips.length) {
     return (
-      <div className="p-4 bg-red-50 rounded-md">
-        <h4 className="text-sm font-medium text-red-800 mb-2">Tips for overcoming roadblocks:</h4>
-        <ul className="text-sm text-red-700 space-y-2 pl-5 list-disc">
-          <li>Break down the roadblock into smaller, more manageable steps.</li>
-          <li>Consider asking for help or advice from someone with expertise.</li>
-          <li>Take a short break and return with a fresh perspective.</li>
+      <div className="p-5 bg-gradient-to-r from-red-50 to-rose-50 rounded-lg shadow-sm border border-red-100">
+        <h4 className="text-sm font-medium text-red-800 mb-3 flex items-center">
+          <span className="text-xl mr-2">🛠️</span> Tips for overcoming roadblocks:
+        </h4>
+        <ul className="text-sm text-red-700 space-y-3">
+          <li className="flex items-start">
+            <span className="text-red-500 mr-2 flex-shrink-0">•</span>
+            <span>Break down the roadblock into smaller, more manageable steps.</span>
+          </li>
+          <li className="flex items-start">
+            <span className="text-red-500 mr-2 flex-shrink-0">•</span>
+            <span>Consider asking for help or advice from someone with expertise.</span>
+          </li>
+          <li className="flex items-start">
+            <span className="text-red-500 mr-2 flex-shrink-0">•</span>
+            <span>Take a short break and return with a fresh perspective.</span>
+          </li>
         </ul>
       </div>
     );
   }
 
   return (
-    <div className="p-4 bg-orange-50 rounded-md border border-orange-100">
-      <h4 className="text-sm font-medium text-orange-800 mb-2">AI Coach Tips:</h4>
-      <ul className="text-sm text-orange-700 space-y-2 pl-5 list-disc">
+    <div className="p-5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg shadow-sm border border-orange-100">
+      <h4 className="text-sm font-medium text-orange-800 mb-3 flex items-center">
+        <span className="text-xl mr-2">💡</span> AI Coach Tips:
+      </h4>
+      <ul className="text-sm text-orange-700 space-y-3">
         {tipsData.tips.map((tip, index) => (
-          <li key={index}>{tip}</li>
+          <li key={index} className="flex items-start">
+            <span className="text-orange-500 mr-2 flex-shrink-0">•</span>
+            <span>{tip}</span>
+          </li>
         ))}
       </ul>
     </div>
