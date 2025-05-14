@@ -27,6 +27,9 @@ export const tasks = z.object({
   addedToCalendar: z.boolean().default(false), // Whether it's been added to calendar
   reminderEnabled: z.boolean().default(false), // Whether to send reminder notifications
   reminderTime: z.string().optional(), // ISO string format for reminder time
+  enableWhatsapp: z.boolean().default(false), // Whether to send WhatsApp reminders
+  whatsappNumber: z.string().optional(), // User's WhatsApp number
+  reminderFrequency: z.enum(['daily', 'weekly', 'task-only']).optional(), // How often to send reminders
 });
 
 export type Task = z.infer<typeof tasks>;

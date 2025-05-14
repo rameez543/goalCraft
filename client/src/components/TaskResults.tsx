@@ -6,7 +6,7 @@ import TaskItem from './TaskItem';
 import ProgressUpdateForm from './ProgressUpdateForm';
 import RoadblockForm from './RoadblockForm';
 import { RoadblockTips } from './AICoach';
-import { Goal } from '../types';
+import { Goal, ReminderFrequency } from '../types';
 
 interface TaskResultsProps {
   goal: Goal;
@@ -21,6 +21,9 @@ interface TaskResultsProps {
       addedToCalendar?: boolean;
       reminderEnabled?: boolean;
       reminderTime?: string;
+      enableWhatsapp?: boolean;
+      whatsappNumber?: string;
+      reminderFrequency?: ReminderFrequency;
     }
   ) => Promise<void>;
   onUpdateSubtaskSchedule?: (

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { apiRequest } from '@/lib/queryClient';
 import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { Goal, GoalContextType, ProgressUpdateOptions, RoadblockOptions, NotificationChannel, UserSettings } from '../types';
+import { Goal, GoalContextType, ProgressUpdateOptions, RoadblockOptions, NotificationChannel, UserSettings, ReminderFrequency } from '../types';
 import { saveGoalsToLocalStorage, getGoalsFromLocalStorage } from '../lib/localStorage';
 import { useAuth } from './AuthContext';
 
