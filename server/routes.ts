@@ -392,6 +392,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Update task scheduling (due date, calendar, reminders)
+  app.patch("/api/tasks/schedule", async (req: Request, res: Response) => {
+    try {
+      const { goalId, taskId, updates } = req.body;
+      
+      if (!goalId || !taskId || !updates) {
+        res.status(400).json({ message: "Missing required fields" });
+        return;
+      }
+      
+      const goal = await storage.getGoal(goalId);
+      if (!goal) {
+        res.status(404).json({ message: "Goal not found" });
+        return;
+      }
+      
+      // Find the task to update
+      const taskIndex = goal.tasks.findIndex(t => t.id === taskId);
+      if (taskIndex === -1) {
+        res.status(404).json({ message: "Task not found" });
+        return;
+      }
+      
+      // Create updated task with scheduling information
+      const updatedTask = {
+        ...goal.tasks[taskIndex],
+        ...(updates.dueDate !== undefined && { dueDate: updates.dueDate }),
+        ...(updates.addedToCalendar !== undefined && { addedToCalendar: updates.addedToCalendar }),
+        ...(updates.reminderEnabled !== undefined && { reminderEnabled: updates.reminderEnabled }),
+        ...(updates.reminderTime !== undefined && { reminderTime: updates.reminderTime })
+      };
+      
+      // Update the task in the goal
+      const updatedTasks = [...goal.tasks];
+      updatedTasks[taskIndex] = updatedTask;
+      
+      // Save the updated goal
+      const updatedGoal = await storage.updateGoal(goalId, {
+        tasks: updatedTasks
+      });
+      
+      if (!updatedGoal) {
+        res.status(500).json({ message: "Failed to update task schedule" });
+        return;
+      }
+      
+      res.json(updatedGoal);
+    } catch (error) {
+      console.error("Error updating task schedule:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to update task schedule" 
+      });
+    }
+  });
+  
+  // Update subtask scheduling (due date, calendar)
+  app.patch("/api/subtasks/schedule", async (req: Request, res: Response) => {
+    try {
+      const { goalId, taskId, subtaskId, updates } = req.body;
+      
+      if (!goalId || !taskId || !subtaskId || !updates) {
+        res.status(400).json({ message: "Missing required fields" });
+        return;
+      }
+      
+      const goal = await storage.getGoal(goalId);
+      if (!goal) {
+        res.status(404).json({ message: "Goal not found" });
+        return;
+      }
+      
+      // Find the task containing the subtask
+      const taskIndex = goal.tasks.findIndex(t => t.id === taskId);
+      if (taskIndex === -1) {
+        res.status(404).json({ message: "Task not found" });
+        return;
+      }
+      
+      // Find the subtask to update
+      const task = goal.tasks[taskIndex];
+      const subtaskIndex = task.subtasks.findIndex(s => s.id === subtaskId);
+      if (subtaskIndex === -1) {
+        res.status(404).json({ message: "Subtask not found" });
+        return;
+      }
+      
+      // Create updated subtask with scheduling information
+      const updatedSubtask = {
+        ...task.subtasks[subtaskIndex],
+        ...(updates.dueDate !== undefined && { dueDate: updates.dueDate }),
+        ...(updates.addedToCalendar !== undefined && { addedToCalendar: updates.addedToCalendar })
+      };
+      
+      // Update the subtask in the task
+      const updatedSubtasks = [...task.subtasks];
+      updatedSubtasks[subtaskIndex] = updatedSubtask;
+      
+      // Update the task with the updated subtasks
+      const updatedTask = {
+        ...task,
+        subtasks: updatedSubtasks
+      };
+      
+      // Update the task in the goal
+      const updatedTasks = [...goal.tasks];
+      updatedTasks[taskIndex] = updatedTask;
+      
+      // Save the updated goal
+      const updatedGoal = await storage.updateGoal(goalId, {
+        tasks: updatedTasks
+      });
+      
+      if (!updatedGoal) {
+        res.status(500).json({ message: "Failed to update subtask schedule" });
+        return;
+      }
+      
+      res.json(updatedGoal);
+    } catch (error) {
+      console.error("Error updating subtask schedule:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to update subtask schedule" 
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
