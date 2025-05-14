@@ -355,6 +355,12 @@ const Dashboard: React.FC = () => {
             )}
           </div>
         </TabsContent>
+        
+        <TabsContent value="settings" className="mt-4">
+          <div className="space-y-4">
+            <NotificationSettings />
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );

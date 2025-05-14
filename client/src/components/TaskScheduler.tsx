@@ -4,7 +4,14 @@ import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Task, Subtask } from '../types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Task, Subtask, ReminderFrequency } from '../types';
 
 interface TaskSchedulerProps {
   task: Task;
@@ -12,7 +19,7 @@ interface TaskSchedulerProps {
   onUpdateDueDate: (dueDate: string | undefined) => void;
   onAddToCalendar: (add: boolean) => void;
   onEnableReminder?: (enabled: boolean, reminderTime?: string) => void;
-  onEnableWhatsapp?: (enabled: boolean, phoneNumber?: string) => void;
+  onEnableWhatsapp?: (enabled: boolean, phoneNumber?: string, frequency?: ReminderFrequency) => void;
   contactPhone?: string;
 }
 
@@ -52,11 +59,15 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
   );
   
   const [whatsappNumber, setWhatsappNumber] = useState<string>(
-    contactPhone || ''
+    task.whatsappNumber || contactPhone || ''
   );
   
   const [whatsappSaved, setWhatsappSaved] = useState<boolean>(
-    !!contactPhone
+    !!task.whatsappNumber || !!contactPhone
+  );
+  
+  const [reminderFrequency, setReminderFrequency] = useState<'daily' | 'weekly' | 'task-only'>(
+    task.reminderFrequency || 'task-only'
   );
 
   const handleCalendarChange = (date: Date | undefined) => {
@@ -97,11 +108,16 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
     setWhatsappSaved(false); // Reset saved state when changing number
   };
   
+  const handleReminderFrequencyChange = (value: string) => {
+    setReminderFrequency(value as ReminderFrequency);
+    setWhatsappSaved(false); // Reset saved state when changing frequency
+  };
+  
   const handleSaveWhatsappNumber = () => {
     if (whatsappNumber && whatsappNumber.trim() !== '') {
       setWhatsappSaved(true);
       if (onEnableWhatsapp) {
-        onEnableWhatsapp(true, whatsappNumber);
+        onEnableWhatsapp(true, whatsappNumber, reminderFrequency);
       }
     }
   };
