@@ -8,6 +8,7 @@ import Home from "@/pages/Home";
 import Settings from "@/pages/Settings";
 import { GoalProvider } from "./contexts/GoalContext";
 import { AuthProvider } from "./contexts/AuthContext";
+import { TabProvider } from "./contexts/TabContext";
 
 function Router() {
   return (
@@ -26,8 +27,10 @@ function App() {
       <TooltipProvider>
         <AuthProvider>
           <GoalProvider>
-            <Toaster />
-            <Router />
+            <TabProvider>
+              <Toaster />
+              <Router />
+            </TabProvider>
           </GoalProvider>
         </AuthProvider>
       </TooltipProvider>

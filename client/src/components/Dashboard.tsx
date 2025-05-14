@@ -8,6 +8,7 @@ import { Goal, ReminderFrequency } from '../types';
 import AICoach, { RoadblockTips } from './AICoach';
 import { WhatsAppNudge } from './WhatsAppNudge';
 import { NotificationSettings } from './NotificationSettings';
+import { useLocation } from 'wouter';
 
 const Dashboard: React.FC = () => {
   const { goals, loading, updateGlobalSettings } = useGoals();
@@ -252,6 +253,9 @@ const Dashboard: React.FC = () => {
 
 // Goal Summary Card Component
 const GoalSummaryCard: React.FC<{ goal: Goal; showRoadblock?: boolean }> = ({ goal, showRoadblock = false }) => {
+  // Location hook for navigation
+  const [location, setLocation] = useLocation();
+  
   // Calculate task completion
   const totalTasks = goal.tasks.length;
   const completedTasks = goal.tasks.filter(task => task.completed).length;
@@ -393,21 +397,9 @@ const GoalSummaryCard: React.FC<{ goal: Goal; showRoadblock?: boolean }> = ({ go
               className="text-sm gap-1"
               onClick={(e) => {
                 e.stopPropagation(); // Prevent card collapse when clicking button
-                // Navigate to the "Goal Details" tab on the home page
-                const tabsElement = document.querySelector('[role="tablist"]');
-                if (tabsElement) {
-                  const goalDetailsTab = tabsElement.querySelector('[value="goals"]') as HTMLElement;
-                  if (goalDetailsTab) {
-                    goalDetailsTab.click();
-                    // Scroll to this specific goal
-                    setTimeout(() => {
-                      const goalElement = document.getElementById(`goal-${goal.id}`);
-                      if (goalElement) {
-                        goalElement.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    }, 300);
-                  }
-                }
+                // Use tab context to navigate to goals tab and view details
+                const { viewGoalDetails } = useTab();
+                viewGoalDetails(goal.id);
               }}
             >
               <span>View Full Details</span>

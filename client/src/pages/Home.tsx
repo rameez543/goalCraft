@@ -8,11 +8,11 @@ import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useGoals } from '../contexts/GoalContext';
+import { useTab } from '../contexts/TabContext';
 
 const Home: React.FC = () => {
   const { goals, loading, error, deleteGoal, toggleTaskCompletion, toggleSubtaskCompletion } = useGoals();
-
-  const [activeTab, setActiveTab] = useState<string>("dashboard");
+  const { activeTab, setActiveTab } = useTab();
 
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col">
