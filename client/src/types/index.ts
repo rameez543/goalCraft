@@ -59,12 +59,17 @@ export interface RoadblockOptions {
   contactPhone?: string;
 }
 
+export type ReminderFrequency = 'daily' | 'weekly' | 'task-only';
+
 export interface UserSettings {
   whatsappNumber?: string;
   enableWhatsappNotifications?: boolean;
   defaultNotificationChannels?: NotificationChannel[];
   contactEmail?: string;
   contactPhone?: string;
+  reminderFrequency?: ReminderFrequency;
+  reminderTime?: string;
+  reminderDays?: string[]; // For weekly reminders, which days of the week
 }
 
 export type GoalContextType = {

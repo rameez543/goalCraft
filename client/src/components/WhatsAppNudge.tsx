@@ -13,11 +13,20 @@ import {
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import { ReminderFrequency } from '../types';
 
 interface WhatsAppNudgeProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onEnableWhatsApp: (phoneNumber: string) => Promise<void>;
+  onEnableWhatsApp: (phoneNumber: string, frequency?: ReminderFrequency) => Promise<void>;
   onSkip: () => void;
 }
 
@@ -29,6 +38,7 @@ export const WhatsAppNudge: React.FC<WhatsAppNudgeProps> = ({
 }) => {
   const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [agreedToTerms, setAgreedToTerms] = useState<boolean>(false);
+  const [reminderFrequency, setReminderFrequency] = useState<'daily' | 'weekly' | 'task-only'>('task-only');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,7 +57,8 @@ export const WhatsAppNudge: React.FC<WhatsAppNudgeProps> = ({
     setError(null);
 
     try {
-      await onEnableWhatsApp(phoneNumber);
+      // Pass the phone number and frequency settings
+      await onEnableWhatsApp(phoneNumber, reminderFrequency);
       onOpenChange(false);
     } catch (err) {
       setError('Failed to save your WhatsApp preferences. Please try again.');
@@ -83,22 +94,46 @@ export const WhatsAppNudge: React.FC<WhatsAppNudgeProps> = ({
           </div>
 
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="whatsapp-number" className="text-sm font-medium">
-                Your WhatsApp Number
-              </Label>
-              <input
-                id="whatsapp-number"
-                type="tel"
-                inputMode="tel"
-                placeholder="+1 (555) 555-5555"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              />
-              <p className="text-xs text-gray-500">
-                Enter your number in international format (e.g., +1 for US)
-              </p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="whatsapp-number" className="text-sm font-medium">
+                  Your WhatsApp Number
+                </Label>
+                <input
+                  id="whatsapp-number"
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="+1 (555) 555-5555"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                />
+                <p className="text-xs text-gray-500">
+                  Enter your number in international format (e.g., +1 for US)
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="reminder-frequency" className="text-sm font-medium">
+                  Reminder Frequency
+                </Label>
+                <Select 
+                  value={reminderFrequency}
+                  onValueChange={(value) => setReminderFrequency(value as ReminderFrequency)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">Daily Summary</SelectItem>
+                    <SelectItem value="weekly">Weekly Summary</SelectItem>
+                    <SelectItem value="task-only">Task Due Dates Only</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500">
+                  Choose how often you'll receive WhatsApp reminders
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center space-x-2">

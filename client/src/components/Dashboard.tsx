@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useGoals } from '../contexts/GoalContext';
-import { Goal } from '../types';
+import { Goal, ReminderFrequency } from '../types';
 import AICoach, { RoadblockTips } from './AICoach';
 import { WhatsAppNudge } from './WhatsAppNudge';
+import { NotificationSettings } from './NotificationSettings';
 
 const Dashboard: React.FC = () => {
   const { goals, loading, updateGlobalSettings } = useGoals();
@@ -36,12 +37,17 @@ const Dashboard: React.FC = () => {
   }, [goals, whatsAppContactSaved]);
 
   // Handle enabling WhatsApp notifications
-  const handleEnableWhatsApp = async (phoneNumber: string): Promise<void> => {
+  const handleEnableWhatsApp = async (phoneNumber: string, frequency: ReminderFrequency = 'task-only'): Promise<void> => {
     try {
-      // Save the WhatsApp number to user's settings
+      // Default reminder time is 9 AM
+      const defaultReminderTime = '09:00';
+      
+      // Save the WhatsApp number and frequency settings to user's settings
       await updateGlobalSettings({
         whatsappNumber: phoneNumber,
-        enableWhatsappNotifications: true
+        enableWhatsappNotifications: true,
+        reminderFrequency: frequency,
+        reminderTime: defaultReminderTime
       });
       
       setWhatsAppContactSaved(true);
@@ -293,6 +299,9 @@ const Dashboard: React.FC = () => {
           </TabsTrigger>
           <TabsTrigger value="roadblocks">
             Roadblocks {goalsWithRoadblocks.length > 0 && `(${goalsWithRoadblocks.length})`}
+          </TabsTrigger>
+          <TabsTrigger value="settings">
+            Notification Settings
           </TabsTrigger>
         </TabsList>
         
