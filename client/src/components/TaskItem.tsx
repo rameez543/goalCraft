@@ -25,6 +25,8 @@ interface TaskItemProps {
       addedToCalendar?: boolean;
       reminderEnabled?: boolean;
       reminderTime?: string;
+      enableWhatsapp?: boolean;
+      whatsappNumber?: string;
     }
   ) => Promise<void>;
   onUpdateSubtaskSchedule?: (
@@ -36,6 +38,7 @@ interface TaskItemProps {
       addedToCalendar?: boolean;
     }
   ) => Promise<void>;
+  contactPhone?: string;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({
@@ -45,6 +48,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   onToggleSubtaskComplete,
   onUpdateTaskSchedule,
   onUpdateSubtaskSchedule,
+  contactPhone,
 }) => {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
 
@@ -72,10 +76,19 @@ const TaskItem: React.FC<TaskItemProps> = ({
       });
     }
   };
+  
+  const handleEnableWhatsapp = async (enabled: boolean, phoneNumber?: string) => {
+    if (onUpdateTaskSchedule) {
+      await onUpdateTaskSchedule(goalId, task.id, { 
+        enableWhatsapp: enabled,
+        whatsappNumber: phoneNumber
+      });
+    }
+  };
 
   return (
     <li className="group">
-      <div className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded-lg">
+      <div className="flex items-start gap-2 md:gap-3 p-2 hover:bg-gray-50 rounded-lg">
         <div className="flex-shrink-0 mt-0.5">
           <Checkbox
             id={`task-${task.id}`}
@@ -84,19 +97,58 @@ const TaskItem: React.FC<TaskItemProps> = ({
             className="w-5 h-5 border-2 border-gray-300 rounded data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
           />
         </div>
-        <div className="flex-grow">
+        <div className="flex-grow min-w-0">
           <div className="flex flex-col">
-            <label
-              htmlFor={`task-${task.id}`}
-              className={`text-base text-gray-800 cursor-pointer ${
-                task.completed ? 'line-through text-gray-400' : ''
-              }`}
-            >
-              {task.title}
-            </label>
+            <div className="flex justify-between items-start gap-2">
+              <label
+                htmlFor={`task-${task.id}`}
+                className={`text-base text-gray-800 cursor-pointer break-words ${
+                  task.completed ? 'line-through text-gray-400' : ''
+                }`}
+              >
+                {task.title}
+              </label>
+              
+              {/* Actions for mobile - always visible */}
+              <div className="flex-shrink-0 md:hidden flex items-center space-x-1">
+                <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
+                  <DialogTrigger asChild>
+                    <button className="p-1 text-gray-500 hover:text-purple-600 rounded" title="Schedule Task">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="w-[90vw] md:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Schedule Task</DialogTitle>
+                    </DialogHeader>
+                    <TaskScheduler 
+                      task={task}
+                      onUpdateDueDate={handleUpdateDueDate}
+                      onAddToCalendar={handleAddToCalendar}
+                      onEnableReminder={handleEnableReminder}
+                      onEnableWhatsapp={handleEnableWhatsapp}
+                      contactPhone={contactPhone}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
             
             {/* Time, Complexity, and Due Date Information */}
-            <div className="flex items-center space-x-3 mt-1 text-xs flex-wrap">
+            <div className="flex flex-wrap items-center gap-2 mt-1 text-xs">
               {task.estimatedMinutes && (
                 <span className="flex items-center text-blue-600">
                   <svg 
@@ -123,7 +175,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                   task.complexity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
                   'bg-red-100 text-red-800'
                 }`}>
-                  {task.complexity} complexity
+                  {task.complexity}
                 </span>
               )}
               
@@ -131,7 +183,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                 <span className="flex items-center text-purple-600">
                   <svg 
                     xmlns="http://www.w3.org/2000/svg" 
-                    className="h-4 w-4 mr-1" 
+                    className="h-4 w-4 mr-1 flex-shrink-0" 
                     fill="none" 
                     viewBox="0 0 24 24" 
                     stroke="currentColor"
@@ -143,7 +195,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                       d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" 
                     />
                   </svg>
-                  Due: {format(new Date(task.dueDate), 'MMM d, yyyy')}
+                  <span className="truncate">{format(new Date(task.dueDate), 'MMM d, yyyy')}</span>
                 </span>
               )}
               
@@ -151,7 +203,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                 <span className="flex items-center text-green-600">
                   <svg 
                     xmlns="http://www.w3.org/2000/svg" 
-                    className="h-4 w-4 mr-1" 
+                    className="h-4 w-4 mr-1 flex-shrink-0" 
                     fill="none" 
                     viewBox="0 0 24 24" 
                     stroke="currentColor"
@@ -163,7 +215,27 @@ const TaskItem: React.FC<TaskItemProps> = ({
                       d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" 
                     />
                   </svg>
-                  In Calendar
+                  <span className="truncate">Calendar</span>
+                </span>
+              )}
+              
+              {task.enableWhatsapp && (
+                <span className="flex items-center text-green-600">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-4 w-4 mr-1 flex-shrink-0" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" 
+                    />
+                  </svg>
+                  <span className="truncate">WhatsApp</span>
                 </span>
               )}
             </div>
@@ -185,7 +257,8 @@ const TaskItem: React.FC<TaskItemProps> = ({
             </ul>
           )}
         </div>
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1">
+        {/* Desktop actions - visible on hover */}
+        <div className="hidden md:flex opacity-0 group-hover:opacity-100 transition-opacity items-center space-x-1">
           <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
             <DialogTrigger asChild>
               <button className="p-1 text-gray-400 hover:text-purple-600 rounded" title="Schedule Task">
@@ -214,6 +287,8 @@ const TaskItem: React.FC<TaskItemProps> = ({
                 onUpdateDueDate={handleUpdateDueDate}
                 onAddToCalendar={handleAddToCalendar}
                 onEnableReminder={handleEnableReminder}
+                onEnableWhatsapp={handleEnableWhatsapp}
+                contactPhone={contactPhone}
               />
             </DialogContent>
           </Dialog>
