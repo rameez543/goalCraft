@@ -1,5 +1,6 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { Strategy as LocalStrategy } from 'passport-local';
 import { storage } from './storage';
 import express, { Request, Response, NextFunction } from 'express';
 import session from 'express-session';
@@ -9,11 +10,25 @@ import { z } from 'zod';
 import { fromZodError } from 'zod-validation-error';
 import { type User } from '@shared/schema';
 import connectPgSimple from 'connect-pg-simple';
+import crypto from 'crypto';
 
 neonConfig.webSocketConstructor = ws;
 
 // Set up PostgreSQL session store
 const PgStore = connectPgSimple(session);
+
+// Password hashing functions
+const hashPassword = (password: string): string => {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+  return `${salt}:${hash}`;
+};
+
+const verifyPassword = (password: string, hashedPassword: string): boolean => {
+  const [salt, storedHash] = hashedPassword.split(':');
+  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+  return storedHash === hash;
+};
 
 // Configure passport to use Google OAuth2
 passport.use(
@@ -46,6 +61,40 @@ passport.use(
         return done(null, user);
       } catch (error) {
         console.error('Error in Google auth strategy:', error);
+        return done(error as Error);
+      }
+    }
+  )
+);
+
+// Configure passport to use LocalStrategy for username/password auth
+passport.use(
+  new LocalStrategy(
+    {
+      usernameField: 'email',
+      passwordField: 'password',
+    },
+    async (email, password, done) => {
+      try {
+        // Find user by email
+        const user = await storage.getUserByEmail(email);
+        if (!user) {
+          return done(null, false, { message: 'Incorrect email or password' });
+        }
+
+        // Check if password exists (user might have registered via Google)
+        if (!user.password) {
+          return done(null, false, { message: 'Please login using Google' });
+        }
+
+        // Verify password
+        if (!verifyPassword(password, user.password)) {
+          return done(null, false, { message: 'Incorrect email or password' });
+        }
+
+        return done(null, user);
+      } catch (error) {
+        console.error('Error in local auth strategy:', error);
         return done(error as Error);
       }
     }
@@ -116,6 +165,80 @@ export function setupAuth(app: express.Express) {
     } else {
       res.json({ user: null });
     }
+  });
+
+  // Register route
+  app.post('/api/register', async (req: Request, res: Response) => {
+    try {
+      // Validate request data
+      const validatedData = registerUserSchema.parse(req.body);
+      
+      // Check if user with this email already exists
+      const existingUserByEmail = await storage.getUserByEmail(validatedData.email);
+      if (existingUserByEmail) {
+        return res.status(400).json({ message: 'Email already in use' });
+      }
+      
+      // Check if username is taken
+      const existingUserByUsername = await storage.getUserByUsername(validatedData.username);
+      if (existingUserByUsername) {
+        return res.status(400).json({ message: 'Username already taken' });
+      }
+      
+      // Hash the password
+      const hashedPassword = hashPassword(validatedData.password);
+      
+      // Create the new user
+      const newUser = await storage.createUser({
+        username: validatedData.username,
+        email: validatedData.email,
+        password: hashedPassword,
+        displayName: validatedData.username,
+      });
+      
+      // Log the user in
+      req.login(newUser, (err) => {
+        if (err) {
+          console.error('Error logging in after registration:', err);
+          return res.status(500).json({ message: 'Error logging in after registration' });
+        }
+        
+        // Return user data without sensitive information
+        const { password, ...userData } = newUser as any;
+        res.status(201).json({ user: userData });
+      });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      console.error('Error in registration:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  // Login route
+  app.post('/api/login', (req: Request, res: Response, next: NextFunction) => {
+    passport.authenticate('local', (err: any, user: User | false, info: any) => {
+      if (err) {
+        return next(err);
+      }
+      
+      if (!user) {
+        return res.status(401).json({ message: info.message || 'Authentication failed' });
+      }
+      
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          return next(loginErr);
+        }
+        
+        // Return user data without sensitive information
+        const { password, ...userData } = user as any;
+        return res.json({ user: userData });
+      });
+    })(req, res, next);
   });
 
   // Authentication middleware temporarily disabled
