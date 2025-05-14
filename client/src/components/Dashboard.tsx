@@ -284,28 +284,28 @@ const GoalSummaryCard: React.FC<{ goal: Goal; showRoadblock?: boolean }> = ({ go
       className={`overflow-hidden transition-all duration-300 ease-in-out border shadow-sm bg-gradient-to-br ${getBgGradient()}`}
     >
       <div 
-        className="p-4 cursor-pointer" 
+        className="p-3 sm:p-4 cursor-pointer" 
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <span className="text-xl mr-2">{getEmoji()}</span>
-            <h3 className="font-medium text-lg">{goal.title}</h3>
+        <div className="flex items-center justify-between flex-wrap sm:flex-nowrap gap-1">
+          <div className="flex items-center max-w-full">
+            <span className="text-lg sm:text-xl mr-1.5 sm:mr-2 flex-shrink-0">{getEmoji()}</span>
+            <h3 className="font-medium text-base sm:text-lg truncate">{goal.title}</h3>
           </div>
-          <div className="flex items-center">
-            <div className="px-3 py-1 rounded-full bg-white bg-opacity-70 shadow-sm mr-3">
-              <span className="font-bold text-sm">{goal.progress}%</span>
+          <div className="flex items-center ml-auto mt-1 sm:mt-0">
+            <div className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white bg-opacity-70 shadow-sm mr-2 sm:mr-3">
+              <span className="font-bold text-xs sm:text-sm">{goal.progress}%</span>
             </div>
-            <span className="text-gray-500">
+            <span className="text-gray-500 text-sm sm:text-base">
               {isExpanded ? '↑' : '↓'}
             </span>
           </div>
         </div>
         
-        <div className="mt-3">
+        <div className="mt-2 sm:mt-3">
           <Progress 
             value={goal.progress} 
-            className="h-2"
+            className="h-1.5 sm:h-2"
             style={{
               backgroundColor: 'rgba(255, 255, 255, 0.7)',
             }}
@@ -315,36 +315,36 @@ const GoalSummaryCard: React.FC<{ goal: Goal; showRoadblock?: boolean }> = ({ go
       
       {/* Expandable Content */}
       {isExpanded && (
-        <div className="bg-white p-4 border-t">
+        <div className="bg-white p-3 sm:p-4 border-t">
           {/* Summary Stats */}
-          <div className="flex flex-wrap gap-3 mb-4">
-            <div className="flex-1 min-w-[130px] p-3 rounded-lg bg-blue-50 text-center">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 rounded-lg bg-blue-50 text-center">
               <div className="text-xs text-blue-500 uppercase font-medium">Tasks</div>
-              <div className="text-lg font-bold text-blue-700">{completedTasks}/{totalTasks}</div>
+              <div className="text-sm sm:text-lg font-bold text-blue-700">{completedTasks}/{totalTasks}</div>
             </div>
             
             {goal.timeConstraintMinutes && (
-              <div className="flex-1 min-w-[130px] p-3 rounded-lg bg-purple-50 text-center">
+              <div className="p-2 sm:p-3 rounded-lg bg-purple-50 text-center">
                 <div className="text-xs text-purple-500 uppercase font-medium">Time Constraint</div>
-                <div className="text-lg font-bold text-purple-700">{goal.timeConstraintMinutes} min</div>
+                <div className="text-sm sm:text-lg font-bold text-purple-700">{goal.timeConstraintMinutes} min</div>
               </div>
             )}
             
             {goal.roadblocks && (
-              <div className="flex-1 min-w-[130px] p-3 rounded-lg bg-red-50 text-center">
+              <div className="p-2 sm:p-3 rounded-lg bg-red-50 text-center">
                 <div className="text-xs text-red-500 uppercase font-medium">Roadblock</div>
-                <div className="text-sm font-medium text-red-700 truncate">Active</div>
+                <div className="text-xs sm:text-sm font-medium text-red-700 truncate">Active</div>
               </div>
             )}
           </div>
           
           {/* Roadblock Section */}
           {showRoadblock && goal.roadblocks && (
-            <div className="mb-4">
-              <h4 className="font-medium text-red-600 mb-2 flex items-center">
+            <div className="mb-3 sm:mb-4">
+              <h4 className="font-medium text-red-600 mb-1 sm:mb-2 flex items-center text-sm sm:text-base">
                 <span className="mr-1">🚧</span> Reported Roadblock:
               </h4>
-              <div className="p-3 bg-red-50 rounded-md text-sm border border-red-100">
+              <div className="p-2 sm:p-3 bg-red-50 rounded-md text-xs sm:text-sm border border-red-100">
                 {goal.roadblocks}
               </div>
             </div>
@@ -352,27 +352,27 @@ const GoalSummaryCard: React.FC<{ goal: Goal; showRoadblock?: boolean }> = ({ go
           
           {/* Tasks Section */}
           {(!showRoadblock || !goal.roadblocks) && (
-            <div className="mb-4">
-              <h4 className="font-medium mb-2 flex items-center">
+            <div className="mb-3 sm:mb-4">
+              <h4 className="font-medium mb-1 sm:mb-2 flex items-center text-sm sm:text-base">
                 <span className="mr-1">📋</span> Next Tasks:
               </h4>
-              <ul className="space-y-2 bg-gray-50 rounded-lg p-3 border border-gray-100">
+              <ul className="space-y-1.5 sm:space-y-2 bg-gray-50 rounded-lg p-2 sm:p-3 border border-gray-100">
                 {goal.tasks
                   .filter(task => !task.completed)
                   .slice(0, 3)
                   .map(task => (
-                    <li key={task.id} className="flex items-start bg-white p-2 rounded-md shadow-sm">
-                      <div className="h-5 w-5 rounded-full border border-gray-300 mt-0.5 mr-2 flex-shrink-0"></div>
-                      <div>
-                        <div className="font-medium">{task.title}</div>
+                    <li key={task.id} className="flex items-start bg-white p-1.5 sm:p-2 rounded-md shadow-sm">
+                      <div className="h-4 w-4 sm:h-5 sm:w-5 rounded-full border border-gray-300 mt-0.5 mr-1.5 sm:mr-2 flex-shrink-0"></div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-xs sm:text-sm truncate">{task.title}</div>
                         {task.estimatedMinutes && (
-                          <div className="text-xs text-gray-500">{task.estimatedMinutes} min · {task.complexity || 'medium'} complexity</div>
+                          <div className="text-[10px] sm:text-xs text-gray-500">{task.estimatedMinutes} min · {task.complexity || 'medium'} complexity</div>
                         )}
                       </div>
                     </li>
                   ))}
                 {goal.tasks.filter(task => !task.completed).length === 0 && (
-                  <li className="text-green-600 bg-white p-2 rounded-md shadow-sm flex items-center">
+                  <li className="text-green-600 bg-white p-1.5 sm:p-2 rounded-md shadow-sm flex items-center text-xs sm:text-sm">
                     <span className="mr-1">🎉</span> All tasks completed!
                   </li>
                 )}
@@ -382,19 +382,19 @@ const GoalSummaryCard: React.FC<{ goal: Goal; showRoadblock?: boolean }> = ({ go
           
           {/* Last Progress Update */}
           {goal.lastProgressUpdate && (
-            <div>
-              <h4 className="font-medium text-blue-600 text-sm mb-1 flex items-center">
+            <div className="mb-2 sm:mb-3">
+              <h4 className="font-medium text-blue-600 text-xs sm:text-sm mb-1 flex items-center">
                 <span className="mr-1">📝</span> Latest Update:
               </h4>
-              <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded-md">{goal.lastProgressUpdate}</p>
+              <p className="text-xs sm:text-sm text-gray-600 bg-blue-50 p-2 sm:p-3 rounded-md">{goal.lastProgressUpdate}</p>
             </div>
           )}
           
           {/* View Details Button */}
-          <div className="mt-4 flex justify-end">
+          <div className="mt-3 sm:mt-4 flex justify-end">
             <Button 
               variant="outline" 
-              className="text-sm gap-1"
+              className="text-xs sm:text-sm gap-1 h-8 sm:h-9 px-2 sm:px-3"
               onClick={(e) => {
                 e.stopPropagation(); // Prevent card collapse when clicking button
                 // Use tab context to navigate to goal details

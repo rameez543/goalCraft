@@ -70,8 +70,8 @@ const AuthPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-4">
-      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8 items-center">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-2 sm:p-4">
+      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-6 md:gap-8 items-center">
         {/* Hero Section */}
         <div className="space-y-6 hidden md:block">
           <h1 className="text-4xl font-bold tracking-tight">
@@ -110,16 +110,39 @@ const AuthPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Mobile Hero - Compact version for mobile */}
+        <div className="space-y-4 md:hidden text-center mb-4">
+          <h1 className="text-3xl font-bold tracking-tight">
+            <span className="bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+              TaskBreaker
+            </span>
+          </h1>
+          <p className="text-sm text-muted-foreground px-4">
+            Break down your goals into simple, actionable tasks
+          </p>
+          <div className="flex flex-wrap justify-center gap-2 px-2">
+            <div className="flex items-center bg-primary/5 rounded-full px-3 py-1">
+              <span className="text-primary mr-1 text-xs">✓</span>
+              <p className="text-xs">AI task breakdown</p>
+            </div>
+            <div className="flex items-center bg-primary/5 rounded-full px-3 py-1">
+              <span className="text-primary mr-1 text-xs">✓</span>
+              <p className="text-xs">Time estimation</p>
+            </div>
+            <div className="flex items-center bg-primary/5 rounded-full px-3 py-1">
+              <span className="text-primary mr-1 text-xs">✓</span>
+              <p className="text-xs">AI coach</p>
+            </div>
+          </div>
+        </div>
+
         {/* Auth Forms */}
-        <Card className="w-full max-w-md mx-auto">
-          <CardHeader>
-            <CardTitle className="text-2xl text-center">
-              <span className="md:hidden bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
-                TaskBreaker
-              </span>
-              <span className="block mt-4">Welcome</span>
+        <Card className="w-full max-w-md mx-auto shadow-lg">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl sm:text-2xl text-center">
+              <span className="block">Welcome</span>
             </CardTitle>
-            <CardDescription className="text-center">
+            <CardDescription className="text-center text-sm">
               Sign in to your account or create a new one
             </CardDescription>
           </CardHeader>
@@ -132,32 +155,34 @@ const AuthPage: React.FC = () => {
             {/* Login Tab */}
             <TabsContent value="login">
               <form onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
-                <CardContent className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                <CardContent className="space-y-3 pt-3 px-3 sm:px-6">
+                  <div className="space-y-1">
+                    <Label htmlFor="email" className="text-sm">Email</Label>
                     <Input
                       id="email"
                       placeholder="your.email@example.com"
+                      className="h-9 text-sm"
                       {...loginForm.register('email')}
                     />
                     {loginForm.formState.errors.email && (
-                      <p className="text-sm text-destructive">{loginForm.formState.errors.email.message}</p>
+                      <p className="text-xs text-destructive">{loginForm.formState.errors.email.message}</p>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="password" className="text-sm">Password</Label>
                     <Input
                       id="password"
                       type="password"
                       placeholder="••••••••"
+                      className="h-9 text-sm"
                       {...loginForm.register('password')}
                     />
                     {loginForm.formState.errors.password && (
-                      <p className="text-sm text-destructive">{loginForm.formState.errors.password.message}</p>
+                      <p className="text-xs text-destructive">{loginForm.formState.errors.password.message}</p>
                     )}
                   </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="px-3 sm:px-6 pb-4">
                   <Button
                     type="submit"
                     className="w-full"
@@ -172,55 +197,59 @@ const AuthPage: React.FC = () => {
             {/* Register Tab */}
             <TabsContent value="register">
               <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)}>
-                <CardContent className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
+                <CardContent className="space-y-3 pt-3 px-3 sm:px-6">
+                  <div className="space-y-1">
+                    <Label htmlFor="username" className="text-sm">Username</Label>
                     <Input
                       id="username"
                       placeholder="johndoe"
+                      className="h-9 text-sm"
                       {...registerForm.register('username')}
                     />
                     {registerForm.formState.errors.username && (
-                      <p className="text-sm text-destructive">{registerForm.formState.errors.username.message}</p>
+                      <p className="text-xs text-destructive">{registerForm.formState.errors.username.message}</p>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="email" className="text-sm">Email</Label>
                     <Input
                       id="email"
                       placeholder="your.email@example.com"
+                      className="h-9 text-sm"
                       {...registerForm.register('email')}
                     />
                     {registerForm.formState.errors.email && (
-                      <p className="text-sm text-destructive">{registerForm.formState.errors.email.message}</p>
+                      <p className="text-xs text-destructive">{registerForm.formState.errors.email.message}</p>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="password" className="text-sm">Password</Label>
                     <Input
                       id="password"
                       type="password"
                       placeholder="••••••••"
+                      className="h-9 text-sm"
                       {...registerForm.register('password')}
                     />
                     {registerForm.formState.errors.password && (
-                      <p className="text-sm text-destructive">{registerForm.formState.errors.password.message}</p>
+                      <p className="text-xs text-destructive">{registerForm.formState.errors.password.message}</p>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="confirmPassword" className="text-sm">Confirm Password</Label>
                     <Input
                       id="confirmPassword"
                       type="password"
                       placeholder="••••••••"
+                      className="h-9 text-sm"
                       {...registerForm.register('confirmPassword')}
                     />
                     {registerForm.formState.errors.confirmPassword && (
-                      <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message}</p>
+                      <p className="text-xs text-destructive">{registerForm.formState.errors.confirmPassword.message}</p>
                     )}
                   </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="px-3 sm:px-6 pb-4">
                   <Button
                     type="submit"
                     className="w-full"
