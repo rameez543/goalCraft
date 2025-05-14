@@ -22,12 +22,72 @@ interface TaskBreakdownResponse {
   overallSuggestions?: string; // General suggestions for approaching the goal
 }
 
+/**
+ * Performs a chain-of-thought analysis on the goal to gather more context
+ * before performing the actual breakdown
+ */
+async function analyzeGoalWithChainOfThought(
+  goalTitle: string,
+  timeConstraintMinutes?: number,
+  additionalInfo?: string
+): Promise<string> {
+  console.log(`Starting chain-of-thought analysis for goal: "${goalTitle}"`);
+  try {
+    const prompt = `
+    I need to break down this goal into actionable tasks:
+    
+    Goal: "${goalTitle}"
+    ${timeConstraintMinutes ? `Time Constraint: ${timeConstraintMinutes} minutes` : ''}
+    ${additionalInfo ? `Additional Information: ${additionalInfo}` : ''}
+    
+    Before creating a structured task breakdown, I'll think through what this goal might involve and what context I should consider:
+    
+    1. What domain knowledge is required for this goal?
+    2. What might be the implicit steps or prerequisites not stated directly?
+    3. Are there potential bottlenecks or challenging aspects to consider?
+    4. What technical, creative, or logistical components might be involved?
+    5. What resources or skills might be needed?
+    6. If there's a time constraint, how should priorities be adjusted?
+    7. What common pitfalls or roadblocks might occur?
+    8. What would make for a successful outcome?
+    
+    Provide a detailed chain-of-thought analysis (5-10 paragraphs) about this goal before breaking it down.
+    `;
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert at analyzing goals and projects. You excel at identifying unstated requirements, 
+          potential challenges, and important context that would help in breaking down a goal into tasks. 
+          Your analysis should be thorough, insightful, and cover multiple perspectives on the goal.`
+        },
+        { role: "user", content: prompt }
+      ]
+    });
+    
+    const analysis = response.choices[0].message.content || '';
+    console.log(`Completed chain-of-thought analysis for goal: "${goalTitle}"`);
+    console.log(`Analysis length: ${analysis.length} characters`);
+    return analysis;
+  } catch (error) {
+    console.error("Error in goal analysis:", error);
+    // Log the error but continue with task breakdown without the analysis
+    console.log(`Chain-of-thought analysis failed for goal: "${goalTitle}", proceeding without analysis`);
+    return ""; // Return empty string on error
+  }
+}
+
 export async function breakdownGoal(
   goalTitle: string, 
   timeConstraintMinutes?: number,
   additionalInfo?: string
 ): Promise<{ tasks: Task[], totalEstimatedMinutes: number, overallSuggestions?: string }> {
   try {
+    // First, perform chain-of-thought analysis to gather more context
+    const goalAnalysis = await analyzeGoalWithChainOfThought(goalTitle, timeConstraintMinutes, additionalInfo);
+    
     let timeConstraintText = "";
     if (timeConstraintMinutes) {
       timeConstraintText = `
@@ -46,6 +106,17 @@ export async function breakdownGoal(
       `;
     }
     
+    let analysisText = "";
+    if (goalAnalysis && goalAnalysis.trim()) {
+      analysisText = `
+      CHAIN-OF-THOUGHT ANALYSIS:
+      ${goalAnalysis}
+      
+      Use this detailed analysis to inform your task breakdown, considering all the aspects, potential challenges, 
+      and context identified above.
+      `;
+    }
+    
     const prompt = `
       Break down the following goal into manageable tasks and subtasks with detailed time estimates and rich contextual information:
       
@@ -53,6 +124,7 @@ export async function breakdownGoal(
       
       ${timeConstraintText}
       ${additionalInfoText}
+      ${analysisText}
       
       IMPORTANT TASK BREAKDOWN GUIDELINES:
       - Analyze this goal deeply and provide a comprehensive breakdown into 5-10 specific, actionable tasks.
