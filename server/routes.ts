@@ -1,8 +1,8 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { breakdownGoal } from "./openai";
-import { generateCoachingMessage, generateRoadblockTips, discussTaskWithAI } from "./ai-coach";
+import { breakdownGoal } from "./llm/task-breakdown";
+import { generateCoachingMessage, generateRoadblockTips, discussTaskWithAI } from "./llm/ai-coach";
 import { 
   createGoalSchema, 
   updateTaskSchema, 
