@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import { Task } from "@shared/schema";
 import { nanoid } from "nanoid";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+// Using gpt-4o-mini as per user request for better cost-efficiency
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 interface TaskBreakdownResponse {
@@ -57,7 +57,7 @@ async function analyzeGoalWithChainOfThought(
     `;
     
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
@@ -199,7 +199,7 @@ export async function breakdownGoal(
     `;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         { 
           role: "system", 

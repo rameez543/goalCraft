@@ -4,8 +4,8 @@ import { Goal } from '@shared/schema';
 // initialize the OpenAI client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const MODEL = 'gpt-4o';
+// Using gpt-4o-mini as per user request for better cost-efficiency
+const MODEL = 'gpt-4o-mini';
 
 interface CoachMessage {
   message: string;
