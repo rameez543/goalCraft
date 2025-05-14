@@ -13,17 +13,17 @@ const Footer: React.FC = () => {
             <span className="font-medium text-gray-800">TaskBreaker</span>
           </div>
           <div className="flex space-x-6">
-            <Link href="/about">
-              <a className="text-gray-500 hover:text-gray-700 text-sm">About</a>
+            <Link href="/about" className="text-gray-500 hover:text-gray-700 text-sm">
+              About
             </Link>
-            <Link href="/privacy">
-              <a className="text-gray-500 hover:text-gray-700 text-sm">Privacy</a>
+            <Link href="/privacy" className="text-gray-500 hover:text-gray-700 text-sm">
+              Privacy
             </Link>
-            <Link href="/terms">
-              <a className="text-gray-500 hover:text-gray-700 text-sm">Terms</a>
+            <Link href="/terms" className="text-gray-500 hover:text-gray-700 text-sm">
+              Terms
             </Link>
-            <Link href="/help">
-              <a className="text-gray-500 hover:text-gray-700 text-sm">Help</a>
+            <Link href="/help" className="text-gray-500 hover:text-gray-700 text-sm">
+              Help
             </Link>
           </div>
         </div>
