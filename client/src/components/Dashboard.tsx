@@ -83,307 +83,169 @@ const Dashboard: React.FC = () => {
         onSkip={() => setShowWhatsAppNudge(false)}
       />
       
-      {/* AI Coach Message */}
-      <AICoach />
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Overall Progress Card */}
-        <Card className="border border-blue-100 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium flex items-center">
-              <span className="text-xl mr-2">📊</span> Overall Progress
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center">
+      {/* Header with AI Coach + Quick Stats */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 shadow-sm border border-blue-100">
+        <div className="flex flex-col md:flex-row gap-4 items-center">
+          {/* AI Coach Section */}
+          <div className="w-full md:w-2/3 p-1">
+            <AICoach />
+          </div>
+          
+          {/* Quick Stats */}
+          <div className="w-full md:w-1/3 flex flex-col gap-3">
+            {/* Overall Progress */}
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-blue-100">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-sm font-medium text-gray-700">Overall Progress</h3>
+                <span className="text-xl font-bold text-blue-600">{overallProgress}%</span>
+              </div>
               <Progress 
                 value={overallProgress} 
-                className="h-3 flex-1 mr-4 overflow-hidden rounded-full" 
+                className="h-3 overflow-hidden" 
                 style={{
                   background: 'linear-gradient(to right, #f0f9ff, #e0f2fe)',
                   boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.05)'
                 }}
               />
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{overallProgress}%</span>
-            </div>
-            <div className="flex items-center justify-between mt-2">
-              <p className="text-sm text-gray-500">
-                ✨ {goals.length} active goal{goals.length !== 1 ? 's' : ''}
-              </p>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-xs px-2 py-1 h-auto"
-                onClick={() => setShowWhatsAppNudge(true)}
-                title="Configure WhatsApp notifications"
-              >
-                <span className="mr-1">💬</span> WhatsApp Settings
-              </Button>
-            </div>
-            
-            {/* Progress Breakdown */}
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <h4 className="text-xs font-medium text-gray-500 mb-2">Progress Breakdown</h4>
-              <div className="flex items-center space-x-1 h-6">
-                {progressBreakdown.map((segment, i) => (
-                  <div 
-                    key={i}
-                    className={`h-full ${segment.color} rounded-sm flex-grow`} 
-                    style={{ 
-                      flexBasis: `${(segment.count / (goals.length || 1)) * 100}%`,
-                      flexGrow: segment.count > 0 ? 1 : 0,
-                      minWidth: segment.count > 0 ? '1.5rem' : '0',
-                      opacity: 0.85
-                    }}
-                  />
-                ))}
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                {progressBreakdown.map((segment, i) => (
-                  <div key={i} className="text-center">
-                    <span className={segment.count > 0 ? 'font-medium' : ''}>
-                      {segment.count}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div className="flex justify-between text-[10px] text-gray-400">
-                {progressBreakdown.map((segment, i) => (
-                  <div key={i}>
-                    {segment.label}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Roadblocks Card */}
-        <Card className="border border-red-50 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium flex items-center">
-              <span className="text-xl mr-2">🚧</span> Roadblocks
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center">
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-50 text-red-500">
-                <span className="text-xl font-bold">{goalsWithRoadblocks.length}</span>
-              </div>
-              <div className="ml-4 text-sm text-gray-500">
-                {goalsWithRoadblocks.length === 0 
-                  ? '✅ No roadblocks reported' 
-                  : `⚠️ Goal${goalsWithRoadblocks.length !== 1 ? 's' : ''} with roadblocks`}
+              <div className="mt-2 flex justify-between items-center text-xs text-gray-500">
+                <span>✨ {goals.length} goal{goals.length !== 1 ? 's' : ''}</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-xs px-2 py-1 h-auto text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  onClick={() => setShowWhatsAppNudge(true)}
+                >
+                  <span className="mr-1">💬</span> WhatsApp Settings
+                </Button>
               </div>
             </div>
             
-            {/* Roadblocks List Preview */}
-            {goalsWithRoadblocks.length > 0 && (
-              <div className="mt-4 space-y-3 max-h-28 overflow-y-auto">
-                {goalsWithRoadblocks.slice(0, 2).map(goal => (
-                  <div key={goal.id} className="p-3 bg-red-50 rounded-lg border border-red-100">
-                    <div className="text-sm font-medium text-red-800 truncate">🚩 {goal.title}</div>
-                    <div className="text-xs text-red-600 line-clamp-1 mt-1">{goal.roadblocks}</div>
-                  </div>
-                ))}
-                {goalsWithRoadblocks.length > 2 && (
-                  <div className="text-xs text-center text-red-500 p-1 bg-red-50 rounded-lg">
-                    +{goalsWithRoadblocks.length - 2} more roadblocks
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Time Tracking Card */}
-        <Card className="border border-blue-100 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium flex items-center">
-              <span className="text-xl mr-2">⏱️</span> Time Tracking
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center mb-3">
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 text-blue-600">
-                <span className="text-xl font-bold">⏰</span>
-              </div>
-              <div className="ml-4">
-                <div className="text-sm text-gray-500">Total time</div>
-                <div className="text-lg font-bold text-blue-600">
-                  {goals.reduce((acc, goal) => acc + (goal.totalEstimatedMinutes || 0), 0)} min
+            {/* Roadblocks & Time Tracking */}
+            <div className="flex gap-3">
+              <div className="w-1/2 bg-white p-3 rounded-lg shadow-sm border border-red-100">
+                <div className="flex items-center justify-between">
+                  <span className="text-xl">🚧</span>
+                  <span className="text-lg font-bold text-red-500">{goalsWithRoadblocks.length}</span>
                 </div>
+                <p className="text-xs text-gray-600 mt-1">Roadblocks</p>
               </div>
-            </div>
-            
-            {/* Top Performing Goals */}
-            {goals.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-gray-100">
-                <div className="flex items-center mb-2">
-                  <span className="text-sm font-medium text-gray-700">🎯 Top Progress</span>
-                </div>
-                {topProgressGoals.map(goal => (
-                  <div key={goal.id} className="flex items-center mb-2 p-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-                    <div className="mr-3 flex-shrink-0 bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center">
-                      <span className="font-bold">{goal.progress}%</span>
-                    </div>
-                    <div className="text-sm text-gray-700 truncate">{goal.title}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Progress Timeline Visualization */}
-      <Card className="border border-purple-100 shadow-sm mt-6">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-medium flex items-center">
-            <span className="text-xl mr-2">📈</span> Progress Timeline
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-5">
-            {/* Overall Progress Bar */}
-            <div className="flex flex-col md:flex-row md:items-center gap-2 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-              <div className="text-sm font-medium text-indigo-700 md:w-28 flex items-center">
-                <span className="mr-2">🌟</span> All Goals
-              </div>
-              <div className="flex-1 bg-white rounded-full h-5 overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-blue-500 to-violet-500 rounded-full transition-all duration-500"
-                  style={{ width: `${overallProgress}%` }}
-                ></div>
-              </div>
-              <div className="text-sm font-bold bg-indigo-100 px-3 py-1 rounded-full text-indigo-700 md:w-16 text-center">
-                {overallProgress}%
-              </div>
-            </div>
-            
-            {/* Individual Goal Progress Bars */}
-            <div className="space-y-4">
-              {sortedGoals.map(goal => {
-                const completedTasks = goal.tasks.filter(t => t.completed).length;
-                const totalTasks = goal.tasks.length;
-                
-                // Choose color and emoji based on progress
-                let progressColor = 'from-red-400 to-red-500';
-                let progressEmoji = '🔴';
-                if (goal.progress > 75) {
-                  progressColor = 'from-green-400 to-green-500';
-                  progressEmoji = '🟢';
-                } else if (goal.progress > 50) {
-                  progressColor = 'from-blue-400 to-blue-500';
-                  progressEmoji = '🔵';
-                } else if (goal.progress > 25) {
-                  progressColor = 'from-yellow-400 to-yellow-500';
-                  progressEmoji = '🟡';
-                }
-                
-                return (
-                  <div key={goal.id} className="flex flex-col md:flex-row md:items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                    <div className="text-sm font-medium text-gray-700 md:w-28 flex items-center">
-                      <span className="mr-2">{progressEmoji}</span>
-                      <span className="truncate">{goal.title}</span>
-                    </div>
-                    <div className="flex-1 bg-white rounded-full h-4 overflow-hidden">
-                      <div 
-                        className={`h-full bg-gradient-to-r ${progressColor} rounded-full transition-all duration-500`}
-                        style={{ width: `${goal.progress}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-sm font-bold bg-gray-200 px-3 py-1 rounded-full text-gray-700 w-full md:w-auto text-center flex justify-between md:block">
-                      <span>{goal.progress}%</span>
-                      <span className="md:hidden"> • {completedTasks}/{totalTasks} tasks</span>
-                      <span className="hidden md:inline"> ({completedTasks}/{totalTasks})</span>
-                    </div>
-                  </div>
-                );
-              })}
               
-              {goals.length === 0 && (
-                <div className="text-center py-8 text-sm text-gray-500 bg-gray-50 rounded-lg">
-                  <div className="text-4xl mb-2">🎯</div>
-                  <p>No goals yet. Create your first goal to track progress!</p>
+              <div className="w-1/2 bg-white p-3 rounded-lg shadow-sm border border-purple-100">
+                <div className="flex items-center justify-between">
+                  <span className="text-xl">⏱️</span>
+                  <span className="text-lg font-bold text-purple-600">
+                    {goals.reduce((acc, goal) => acc + (goal.totalEstimatedMinutes || 0), 0)}
+                  </span>
                 </div>
+                <p className="text-xs text-gray-600 mt-1">Total Minutes</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Goal Filter Tabs */}
+      <div className="rounded-xl bg-white shadow-sm border border-gray-100 p-4">
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="w-full grid grid-cols-4 mb-4">
+            <TabsTrigger value="all" className="rounded-lg text-sm">
+              <span className="mr-1 text-lg">📋</span> All
+            </TabsTrigger>
+            <TabsTrigger value="active" className="rounded-lg text-sm">
+              <span className="mr-1 text-lg">⚡</span> Active
+            </TabsTrigger>
+            <TabsTrigger value="needs-attention" className="rounded-lg text-sm">
+              <span className="mr-1 text-lg">❗</span> Needs Help
+              {needAttentionGoals.length > 0 && <span className="ml-1 text-xs bg-red-100 text-red-700 rounded-full px-1.5">{needAttentionGoals.length}</span>}
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="rounded-lg text-sm">
+              <span className="mr-1 text-lg">⚙️</span> Settings
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* All Goals */}
+          <TabsContent value="all" className="focus-visible:outline-none focus-visible:ring-0">
+            <div className="space-y-4">
+              {goals.length === 0 ? (
+                <div className="text-center p-10 bg-gray-50 rounded-lg">
+                  <div className="text-5xl mb-4">🎯</div>
+                  <h3 className="text-lg font-medium text-gray-700">No goals yet</h3>
+                  <p className="text-sm text-gray-500 mt-2">Create your first goal to get started!</p>
+                </div>
+              ) : (
+                goals.map(goal => <GoalSummaryCard key={goal.id} goal={goal} />)
               )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList>
-          <TabsTrigger value="all">All Goals</TabsTrigger>
-          <TabsTrigger value="needs-attention">
-            Needs Attention {needAttentionGoals.length > 0 && `(${needAttentionGoals.length})`}
-          </TabsTrigger>
-          <TabsTrigger value="roadblocks">
-            Roadblocks {goalsWithRoadblocks.length > 0 && `(${goalsWithRoadblocks.length})`}
-          </TabsTrigger>
-          <TabsTrigger value="settings">
-            Notification Settings
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="all" className="mt-4">
-          <div className="space-y-4">
-            {goals.length === 0 ? (
-              <Card>
-                <CardContent className="py-8">
-                  <div className="text-center">
-                    <h3 className="text-lg font-medium text-gray-700">No goals yet</h3>
-                    <p className="text-sm text-gray-500 mt-2">Create your first goal to get started!</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              goals.map(goal => <GoalSummaryCard key={goal.id} goal={goal} />)
-            )}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="needs-attention" className="mt-4">
-          <div className="space-y-4">
-            {needAttentionGoals.length === 0 ? (
-              <Card>
-                <CardContent className="py-8">
-                  <div className="text-center">
-                    <h3 className="text-lg font-medium text-gray-700">All goals are on track!</h3>
-                    <p className="text-sm text-gray-500 mt-2">You're making good progress.</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              needAttentionGoals.map(goal => <GoalSummaryCard key={goal.id} goal={goal} />)
-            )}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="roadblocks" className="mt-4">
-          <div className="space-y-4">
-            {goalsWithRoadblocks.length === 0 ? (
-              <Card>
-                <CardContent className="py-8">
-                  <div className="text-center">
-                    <h3 className="text-lg font-medium text-gray-700">No roadblocks reported</h3>
-                    <p className="text-sm text-gray-500 mt-2">You're making smooth progress!</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              goalsWithRoadblocks.map(goal => <GoalSummaryCard key={goal.id} goal={goal} showRoadblock />)
-            )}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="settings" className="mt-4">
-          <div className="space-y-4">
-            <NotificationSettings />
-          </div>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+          
+          {/* Active Goals */}
+          <TabsContent value="active" className="focus-visible:outline-none focus-visible:ring-0">
+            <div className="space-y-4">
+              {topProgressGoals.length === 0 ? (
+                <div className="text-center p-10 bg-gray-50 rounded-lg">
+                  <div className="text-5xl mb-4">🚀</div>
+                  <h3 className="text-lg font-medium text-gray-700">No active goals</h3>
+                  <p className="text-sm text-gray-500 mt-2">Create a goal to see your progress!</p>
+                </div>
+              ) : (
+                topProgressGoals.map(goal => <GoalSummaryCard key={goal.id} goal={goal} />)
+              )}
+            </div>
+          </TabsContent>
+          
+          {/* Needs Attention */}
+          <TabsContent value="needs-attention" className="focus-visible:outline-none focus-visible:ring-0">
+            <div className="space-y-4">
+              {needAttentionGoals.length === 0 ? (
+                <div className="text-center p-10 bg-gray-50 rounded-lg">
+                  <div className="text-5xl mb-4">✅</div>
+                  <h3 className="text-lg font-medium text-gray-700">All goals are on track!</h3>
+                  <p className="text-sm text-gray-500 mt-2">You're making good progress.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Roadblocks */}
+                  {goalsWithRoadblocks.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-md font-medium mb-3 flex items-center text-red-700">
+                        <span className="mr-2">🚧</span> Roadblocks
+                      </h3>
+                      <div className="space-y-4">
+                        {goalsWithRoadblocks.map(goal => (
+                          <GoalSummaryCard key={goal.id} goal={goal} showRoadblock />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Low Progress */}
+                  {needAttentionGoals.filter(goal => !goal.roadblocks).length > 0 && (
+                    <div>
+                      <h3 className="text-md font-medium mb-3 flex items-center text-yellow-700">
+                        <span className="mr-2">⚠️</span> Low Progress
+                      </h3>
+                      <div className="space-y-4">
+                        {needAttentionGoals
+                          .filter(goal => !goal.roadblocks)
+                          .map(goal => (
+                            <GoalSummaryCard key={goal.id} goal={goal} />
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </TabsContent>
+          
+          {/* Settings */}
+          <TabsContent value="settings" className="focus-visible:outline-none focus-visible:ring-0">
+            <div className="space-y-4">
+              <NotificationSettings />
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
@@ -394,63 +256,108 @@ const GoalSummaryCard: React.FC<{ goal: Goal; showRoadblock?: boolean }> = ({ go
   const totalTasks = goal.tasks.length;
   const completedTasks = goal.tasks.filter(task => task.completed).length;
   
+  // State for expanded/collapsed view
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Determine card background color based on progress
+  const getBgGradient = () => {
+    if (goal.progress >= 75) return 'from-green-50 to-emerald-50 border-green-100';
+    if (goal.progress >= 50) return 'from-blue-50 to-indigo-50 border-blue-100';
+    if (goal.progress >= 25) return 'from-yellow-50 to-amber-50 border-yellow-100';
+    return 'from-red-50 to-rose-50 border-red-100';
+  };
+  
+  // Get emoji based on progress
+  const getEmoji = () => {
+    if (goal.progress >= 75) return '🎯';
+    if (goal.progress >= 50) return '🚀';
+    if (goal.progress >= 25) return '🔄';
+    return '🏁';
+  };
+  
   return (
-    <Card className="overflow-hidden">
-      <div className="flex flex-col md:flex-row">
-        {/* Progress Section */}
-        <div className="p-4 w-full md:w-1/3 border-r border-gray-100 bg-gray-50">
-          <h3 className="font-medium text-lg truncate">
-            <a href={`#goal-${goal.id}`} className="text-blue-600 hover:underline">{goal.title}</a>
-          </h3>
-          
-          <div className="mt-3 flex items-center">
-            <Progress value={goal.progress} className="h-2 flex-1 mr-4" />
-            <span className="text-lg font-semibold">{goal.progress}%</span>
+    <Card 
+      className={`overflow-hidden transition-all duration-300 ease-in-out border shadow-sm bg-gradient-to-br ${getBgGradient()}`}
+    >
+      <div 
+        className="p-4 cursor-pointer" 
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <span className="text-xl mr-2">{getEmoji()}</span>
+            <h3 className="font-medium text-lg">{goal.title}</h3>
           </div>
-          
-          <div className="mt-2 text-sm text-gray-500">
-            {completedTasks} of {totalTasks} tasks completed
-          </div>
-          
-          {goal.timeConstraintMinutes && (
-            <div className="mt-2 text-xs text-purple-600 flex items-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4 mr-1"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              {goal.timeConstraintMinutes} min time constraint
+          <div className="flex items-center">
+            <div className="px-3 py-1 rounded-full bg-white bg-opacity-70 shadow-sm mr-3">
+              <span className="font-bold text-sm">{goal.progress}%</span>
             </div>
-          )}
+            <span className="text-gray-500">
+              {isExpanded ? '↑' : '↓'}
+            </span>
+          </div>
         </div>
         
-        {/* Tasks/Roadblocks Section */}
-        <div className="p-4 w-full md:w-2/3">
-          {showRoadblock && goal.roadblocks ? (
-            <div>
-              <h4 className="font-medium text-red-600 mb-2">Reported Roadblock:</h4>
-              <div className="p-3 bg-red-50 rounded-md text-sm">
+        <div className="mt-3">
+          <Progress 
+            value={goal.progress} 
+            className="h-2"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.7)',
+            }}
+          />
+        </div>
+      </div>
+      
+      {/* Expandable Content */}
+      {isExpanded && (
+        <div className="bg-white p-4 border-t">
+          {/* Summary Stats */}
+          <div className="flex flex-wrap gap-3 mb-4">
+            <div className="flex-1 min-w-[130px] p-3 rounded-lg bg-blue-50 text-center">
+              <div className="text-xs text-blue-500 uppercase font-medium">Tasks</div>
+              <div className="text-lg font-bold text-blue-700">{completedTasks}/{totalTasks}</div>
+            </div>
+            
+            {goal.timeConstraintMinutes && (
+              <div className="flex-1 min-w-[130px] p-3 rounded-lg bg-purple-50 text-center">
+                <div className="text-xs text-purple-500 uppercase font-medium">Time Constraint</div>
+                <div className="text-lg font-bold text-purple-700">{goal.timeConstraintMinutes} min</div>
+              </div>
+            )}
+            
+            {goal.roadblocks && (
+              <div className="flex-1 min-w-[130px] p-3 rounded-lg bg-red-50 text-center">
+                <div className="text-xs text-red-500 uppercase font-medium">Roadblock</div>
+                <div className="text-sm font-medium text-red-700 truncate">Active</div>
+              </div>
+            )}
+          </div>
+          
+          {/* Roadblock Section */}
+          {showRoadblock && goal.roadblocks && (
+            <div className="mb-4">
+              <h4 className="font-medium text-red-600 mb-2 flex items-center">
+                <span className="mr-1">🚧</span> Reported Roadblock:
+              </h4>
+              <div className="p-3 bg-red-50 rounded-md text-sm border border-red-100">
                 {goal.roadblocks}
               </div>
             </div>
-          ) : (
-            <>
-              <h4 className="font-medium mb-2">Next Tasks:</h4>
-              <ul className="text-sm space-y-2">
+          )}
+          
+          {/* Tasks Section */}
+          {(!showRoadblock || !goal.roadblocks) && (
+            <div className="mb-4">
+              <h4 className="font-medium mb-2 flex items-center">
+                <span className="mr-1">📋</span> Next Tasks:
+              </h4>
+              <ul className="space-y-2 bg-gray-50 rounded-lg p-3 border border-gray-100">
                 {goal.tasks
                   .filter(task => !task.completed)
                   .slice(0, 3)
                   .map(task => (
-                    <li key={task.id} className="flex items-start">
+                    <li key={task.id} className="flex items-start bg-white p-2 rounded-md shadow-sm">
                       <div className="h-5 w-5 rounded-full border border-gray-300 mt-0.5 mr-2 flex-shrink-0"></div>
                       <div>
                         <div className="font-medium">{task.title}</div>
@@ -461,21 +368,40 @@ const GoalSummaryCard: React.FC<{ goal: Goal; showRoadblock?: boolean }> = ({ go
                     </li>
                   ))}
                 {goal.tasks.filter(task => !task.completed).length === 0 && (
-                  <li className="text-green-600">All tasks completed!</li>
+                  <li className="text-green-600 bg-white p-2 rounded-md shadow-sm flex items-center">
+                    <span className="mr-1">🎉</span> All tasks completed!
+                  </li>
                 )}
               </ul>
-            </>
+            </div>
           )}
           
           {/* Last Progress Update */}
           {goal.lastProgressUpdate && (
-            <div className="mt-4 pt-3 border-t border-gray-100">
-              <h4 className="font-medium text-blue-600 text-sm mb-1">Latest Update:</h4>
-              <p className="text-sm text-gray-600">{goal.lastProgressUpdate}</p>
+            <div>
+              <h4 className="font-medium text-blue-600 text-sm mb-1 flex items-center">
+                <span className="mr-1">📝</span> Latest Update:
+              </h4>
+              <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded-md">{goal.lastProgressUpdate}</p>
             </div>
           )}
+          
+          {/* View Details Button */}
+          <div className="mt-4 flex justify-end">
+            <Button 
+              variant="outline" 
+              className="text-sm gap-1"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent card collapse when clicking button
+                window.location.href = `/tasks/${goal.id}`;
+              }}
+            >
+              <span>View Full Details</span>
+              <span>→</span>
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </Card>
   );
 };
