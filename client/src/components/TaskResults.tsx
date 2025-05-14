@@ -131,7 +131,29 @@ const TaskResults: React.FC<TaskResultsProps> = ({
         </div>
       </div>
 
+      {/* Accountability buttons */}
+      <div className="flex flex-wrap gap-2 pt-3 px-5 pb-0 border-b border-gray-100">
+        <ProgressUpdateForm goalId={goal.id} goalTitle={goal.title} />
+        <RoadblockForm goalId={goal.id} goalTitle={goal.title} />
+      </div>
+      
       <CardContent className="p-5">
+        {/* Display progress updates if available */}
+        {goal.lastProgressUpdate && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+            <h4 className="text-sm font-medium text-blue-700 mb-1">Latest Progress Update:</h4>
+            <p className="text-sm text-blue-600">{goal.lastProgressUpdate}</p>
+          </div>
+        )}
+        
+        {/* Display roadblocks if available */}
+        {goal.roadblocks && (
+          <div className="mb-4 p-3 bg-red-50 rounded-lg border border-red-100">
+            <h4 className="text-sm font-medium text-red-700 mb-1">Roadblock Reported:</h4>
+            <p className="text-sm text-red-600">{goal.roadblocks}</p>
+          </div>
+        )}
+        
         {/* Display additional information if available */}
         {goal.additionalInfo && (
           <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">

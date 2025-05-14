@@ -1,24 +1,24 @@
-import { MailService } from '@sendgrid/mail';
 import { Goal, Task } from "@shared/schema";
 
-// Initialize SendGrid mail service
-const initMailService = (): MailService | null => {
-  const apiKey = process.env.SENDGRID_API_KEY;
-  if (!apiKey) {
-    console.warn("SENDGRID_API_KEY not set. Email notifications are disabled.");
-    return null;
-  }
-  
-  const mailService = new MailService();
-  mailService.setApiKey(apiKey);
-  return mailService;
-};
-
-// Mail service instance
-const mailService = initMailService();
+// For development, we'll just log emails instead of sending them
+console.log("Email notifications will be logged to console (not actually sent).");
 
 // Default from email
 const DEFAULT_FROM_EMAIL = "taskbreaker@example.com";
+
+// Helper function to log mock emails
+function logMockEmail(to: string, subject: string, body: string): boolean {
+  console.log(`
+==== MOCK EMAIL ====
+To: ${to}
+From: ${DEFAULT_FROM_EMAIL}
+Subject: ${subject}
+Body:
+${body}
+==================
+`);
+  return true;
+}
 
 /**
  * Send goal creation notification email
