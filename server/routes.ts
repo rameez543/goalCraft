@@ -186,6 +186,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Edit task details
+  app.patch("/api/tasks/edit", async (req: Request, res: Response) => {
+    try {
+      const { goalId, taskId, title, context, actionItems } = req.body;
+      
+      if (!goalId || !taskId) {
+        res.status(400).json({ message: "Goal ID and task ID are required" });
+        return;
+      }
+      
+      // Get the goal
+      const goal = await storage.getGoal(goalId);
+      if (!goal) {
+        res.status(404).json({ message: "Goal not found" });
+        return;
+      }
+      
+      // Find the task in the goal
+      const taskIndex = goal.tasks.findIndex(t => t.id === taskId);
+      if (taskIndex === -1) {
+        res.status(404).json({ message: "Task not found" });
+        return;
+      }
+      
+      // Update the task
+      const updatedTasks = [...goal.tasks];
+      updatedTasks[taskIndex] = {
+        ...updatedTasks[taskIndex],
+        ...(title !== undefined ? { title } : {}),
+        ...(context !== undefined ? { context } : {}),
+        ...(actionItems !== undefined ? { actionItems } : {})
+      };
+      
+      // Save the updated goal
+      const updatedGoal = await storage.updateGoal(goalId, { tasks: updatedTasks });
+      
+      if (!updatedGoal) {
+        res.status(500).json({ message: "Failed to update task" });
+        return;
+      }
+      
+      res.json(updatedGoal);
+    } catch (error) {
+      console.error("Error editing task:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to edit task" 
+      });
+    }
+  });
 
   // Update subtask completion status
   app.patch("/api/subtasks", async (req: Request, res: Response) => {
