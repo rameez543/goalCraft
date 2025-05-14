@@ -36,6 +36,7 @@ const SubtaskItem: React.FC<SubtaskItemProps> = ({
   onUpdateSubtaskSchedule 
 }) => {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const handleToggle = async (checked: boolean) => {
     await onToggleComplete(goalId, taskId, subtask.id, checked);
@@ -110,6 +111,42 @@ const SubtaskItem: React.FC<SubtaskItemProps> = ({
                   </DialogContent>
                 </Dialog>
               )}
+              
+              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogTrigger asChild>
+                  <button className="p-1 text-gray-500 hover:text-amber-600 rounded" title="Edit Subtask">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                      />
+                    </svg>
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="w-[90vw] md:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>✏️ Edit Subtask</DialogTitle>
+                  </DialogHeader>
+                  <SubtaskEditDialog 
+                    goalId={goalId}
+                    taskId={taskId}
+                    subtask={subtask}
+                    onClose={() => setIsEditDialogOpen(false)}
+                    onSubtaskUpdated={() => {
+                      // This would typically trigger a refetch of the goals
+                      // but we'll leave that to the parent component
+                    }}
+                  />
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
           
@@ -216,22 +253,41 @@ const SubtaskItem: React.FC<SubtaskItemProps> = ({
           </Dialog>
         )}
         
-        <button className="p-1 text-gray-400 hover:text-gray-700 rounded" title="Edit Subtask">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogTrigger asChild>
+            <button className="p-1 text-gray-400 hover:text-amber-600 rounded" title="Edit Subtask">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
+              </svg>
+            </button>
+          </DialogTrigger>
+          <DialogContent className="w-[90vw] md:max-w-md">
+            <DialogHeader>
+              <DialogTitle>✏️ Edit Subtask</DialogTitle>
+            </DialogHeader>
+            <SubtaskEditDialog 
+              goalId={goalId}
+              taskId={taskId}
+              subtask={subtask}
+              onClose={() => setIsEditDialogOpen(false)}
+              onSubtaskUpdated={() => {
+                // This would typically trigger a refetch of the goals
+                // but we'll leave that to the parent component
+              }}
             />
-          </svg>
-        </button>
+          </DialogContent>
+        </Dialog>
       </div>
     </li>
   );
