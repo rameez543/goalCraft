@@ -44,6 +44,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   onToggleTaskComplete,
   onToggleSubtaskComplete,
   onUpdateTaskSchedule,
+  onUpdateSubtaskSchedule,
 }) => {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
 
@@ -178,6 +179,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                   taskId={task.id}
                   goalId={goalId}
                   onToggleComplete={onToggleSubtaskComplete}
+                  onUpdateSubtaskSchedule={onUpdateSubtaskSchedule}
                 />
               ))}
             </ul>

@@ -1,10 +1,10 @@
-import React, { useState } from "react";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Task, Subtask } from "../types";
-import { format, parse } from "date-fns";
+import React, { useState } from 'react';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Task, Subtask } from '../types';
 
 interface TaskSchedulerProps {
   task: Task;
@@ -19,118 +19,152 @@ export const TaskScheduler: React.FC<TaskSchedulerProps> = ({
   subtask,
   onUpdateDueDate,
   onAddToCalendar,
-  onEnableReminder,
+  onEnableReminder
 }) => {
-  const item = subtask || task;
+  // Use subtask date if a subtask is provided, otherwise use task date
+  const [date, setDate] = useState<Date | undefined>(
+    subtask?.dueDate ? new Date(subtask.dueDate) : 
+    task?.dueDate ? new Date(task.dueDate) : 
+    undefined
+  );
   
-  // Parse the date string to a Date object if it exists
-  const initialDate = item.dueDate 
-    ? parse(item.dueDate, "yyyy-MM-dd", new Date()) 
-    : undefined;
-    
-  const [date, setDate] = useState<Date | undefined>(initialDate);
-  const [addedToCalendar, setAddedToCalendar] = useState(item.addedToCalendar || false);
-  const [reminderEnabled, setReminderEnabled] = useState(task.reminderEnabled || false);
+  // Use subtask calendar status if a subtask is provided, otherwise use task status
+  const [addToCalendar, setAddToCalendar] = useState<boolean>(
+    subtask ? !!subtask.addedToCalendar : !!task.addedToCalendar
+  );
   
-  // Handle date selection
-  const handleDateSelect = (selectedDate: Date | undefined) => {
-    setDate(selectedDate);
-    if (selectedDate) {
-      // Convert the date to ISO format (YYYY-MM-DD)
-      const formattedDate = format(selectedDate, "yyyy-MM-dd");
-      onUpdateDueDate(formattedDate);
-    } else {
-      onUpdateDueDate(undefined);
-    }
+  // Only used for tasks, not subtasks
+  const [enableReminder, setEnableReminder] = useState<boolean>(
+    !!task.reminderEnabled
+  );
+  
+  const [reminderTime, setReminderTime] = useState<string>(
+    task.reminderTime || '09:00'
+  );
+
+  const handleCalendarChange = (date: Date | undefined) => {
+    setDate(date);
+    onUpdateDueDate(date ? date.toISOString() : undefined);
   };
-  
-  // Handle adding to calendar
-  const handleAddToCalendar = (checked: boolean) => {
-    setAddedToCalendar(checked);
+
+  const handleAddToCalendarChange = (checked: boolean) => {
+    setAddToCalendar(checked);
     onAddToCalendar(checked);
   };
-  
-  // Handle enabling reminders (for tasks only)
-  const handleEnableReminder = (checked: boolean) => {
-    setReminderEnabled(checked);
+
+  const handleEnableReminderChange = (checked: boolean) => {
+    setEnableReminder(checked);
     if (onEnableReminder) {
-      // Default reminder time is 1 day before due date
-      const reminderTime = date 
-        ? format(new Date(date.getTime() - 24 * 60 * 60 * 1000), "yyyy-MM-dd'T'HH:mm:ss") 
-        : undefined;
-      onEnableReminder(checked, reminderTime);
+      onEnableReminder(checked, checked ? reminderTime : undefined);
     }
   };
-  
-  // Generate Google Calendar link
-  const generateGoogleCalendarLink = () => {
-    if (!date) return null;
-    
-    const title = encodeURIComponent(item.title);
-    const startDate = format(date, "yyyyMMdd");
-    const endDate = format(date, "yyyyMMdd");
-    
-    let details = encodeURIComponent(item.context || "");
-    if (task.estimatedMinutes) {
-      details += encodeURIComponent(`\nEstimated time: ${task.estimatedMinutes} minutes`);
+
+  const handleReminderTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setReminderTime(e.target.value);
+    if (enableReminder && onEnableReminder) {
+      onEnableReminder(enableReminder, e.target.value);
     }
-    
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDate}/${endDate}&details=${details}`;
   };
-  
-  const googleCalendarLink = generateGoogleCalendarLink();
-  
+
   return (
-    <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
-      <h3 className="text-lg font-medium">{subtask ? "Schedule Subtask" : "Schedule Task"}</h3>
-      
+    <div className="flex flex-col space-y-6">
+      {/* Show task/subtask details */}
       <div className="space-y-2">
-        <Label htmlFor="due-date">Due Date</Label>
-        <DatePicker 
-          date={date} 
-          onSelect={handleDateSelect} 
-          label="Select due date" 
+        <h3 className="text-base font-medium">
+          {subtask ? 'Subtask' : 'Task'}: {subtask ? subtask.title : task.title}
+        </h3>
+        {(subtask?.context || task.context) && (
+          <p className="text-sm text-gray-600">
+            {subtask ? subtask.context : task.context}
+          </p>
+        )}
+      </div>
+      
+      {/* Calendar for selecting due date */}
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <Label htmlFor="due-date" className="text-sm font-medium">
+            Due Date
+          </Label>
+          {date && (
+            <Button 
+              type="button" 
+              variant="ghost" 
+              size="sm"
+              onClick={() => handleCalendarChange(undefined)}
+              className="text-xs text-gray-600"
+            >
+              Clear
+            </Button>
+          )}
+        </div>
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={handleCalendarChange}
+          className="border rounded-md p-3"
+          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+        />
+        {date && (
+          <p className="text-sm text-blue-600 mt-2">
+            Selected date: {format(date, 'PPP')}
+          </p>
+        )}
+      </div>
+      
+      {/* Add to calendar switch */}
+      <div className="flex items-center justify-between space-x-2">
+        <div className="space-y-0.5">
+          <Label htmlFor="add-to-calendar" className="text-sm font-medium">
+            Add to Calendar
+          </Label>
+          <p className="text-xs text-gray-500">
+            Add this {subtask ? 'subtask' : 'task'} to your calendar application
+          </p>
+        </div>
+        <Switch
+          id="add-to-calendar"
+          checked={addToCalendar}
+          onCheckedChange={handleAddToCalendarChange}
+          disabled={!date}
         />
       </div>
       
-      {date && (
-        <>
-          <div className="flex items-center space-x-2">
-            <Switch 
-              id="add-to-calendar" 
-              checked={addedToCalendar}
-              onCheckedChange={handleAddToCalendar}
+      {/* Reminder settings (only for tasks, not subtasks) */}
+      {!subtask && onEnableReminder && (
+        <div className="space-y-4 pt-2 border-t">
+          <div className="flex items-center justify-between space-x-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="enable-reminder" className="text-sm font-medium">
+                Enable Reminder
+              </Label>
+              <p className="text-xs text-gray-500">
+                Get notified on the due date
+              </p>
+            </div>
+            <Switch
+              id="enable-reminder"
+              checked={enableReminder}
+              onCheckedChange={handleEnableReminderChange}
+              disabled={!date}
             />
-            <Label htmlFor="add-to-calendar">Add to calendar</Label>
           </div>
           
-          {addedToCalendar && googleCalendarLink && (
-            <div className="mt-2">
-              <a 
-                href={googleCalendarLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline flex items-center"
-              >
-                <svg className="w-5 h-5 mr-1" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19.5 3.75h-3V2.25h-1.5v1.5h-6V2.25h-1.5v1.5h-3c-.83 0-1.5.67-1.5 1.5v15c0 .83.67 1.5 1.5 1.5h15c.83 0 1.5-.67 1.5-1.5v-15c0-.83-.67-1.5-1.5-1.5zm0 16.5h-15V9h15v11.25zm0-12.75h-15v-2.25h3v1.5h1.5v-1.5h6v1.5h1.5v-1.5h3v2.25z"/>
-                </svg>
-                Add to Google Calendar
-              </a>
-            </div>
-          )}
-          
-          {!subtask && onEnableReminder && (
-            <div className="flex items-center space-x-2 mt-4">
-              <Switch 
-                id="enable-reminder" 
-                checked={reminderEnabled}
-                onCheckedChange={handleEnableReminder}
+          {enableReminder && (
+            <div className="space-y-2">
+              <Label htmlFor="reminder-time" className="text-sm font-medium">
+                Reminder Time
+              </Label>
+              <input
+                id="reminder-time"
+                type="time"
+                value={reminderTime}
+                onChange={handleReminderTimeChange}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
-              <Label htmlFor="enable-reminder">Enable reminder notification</Label>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
