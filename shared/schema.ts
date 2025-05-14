@@ -8,6 +8,8 @@ export const subtasks = z.object({
   completed: z.boolean().default(false),
   estimatedMinutes: z.number().optional(),
   context: z.string().optional(), // Additional context about the subtask
+  dueDate: z.string().optional(), // ISO string format for due date
+  addedToCalendar: z.boolean().default(false), // Whether it's been added to calendar
 });
 
 export type Subtask = z.infer<typeof subtasks>;
@@ -21,6 +23,10 @@ export const tasks = z.object({
   complexity: z.enum(['low', 'medium', 'high']).optional(),
   context: z.string().optional(), // Additional context about the task
   actionItems: z.array(z.string()).optional(), // Specific action items for this task
+  dueDate: z.string().optional(), // ISO string format for due date
+  addedToCalendar: z.boolean().default(false), // Whether it's been added to calendar
+  reminderEnabled: z.boolean().default(false), // Whether to send reminder notifications
+  reminderTime: z.string().optional(), // ISO string format for reminder time
 });
 
 export type Task = z.infer<typeof tasks>;

@@ -12,10 +12,12 @@ interface TaskBreakdownResponse {
     complexity: 'low' | 'medium' | 'high';
     context?: string; // Additional context about the task for AI
     actionItems?: string[]; // Specific action items for this task
+    dueDate?: string; // Due date for the task (ISO string)
     subtasks?: {
       title: string;
       estimatedMinutes: number;
       context?: string; // Additional context about the subtask
+      dueDate?: string; // Due date for the subtask (ISO string)
     }[];
   }[];
   totalEstimatedMinutes: number;
@@ -141,11 +143,13 @@ export async function breakdownGoal(
       3. Complexity assessment (low, medium, high) based on skill required and cognitive load
       4. Detailed context explaining WHY this task matters and HOW to approach it effectively (3-5 sentences)
       5. 2-4 specific action items that provide step-by-step guidance
+      6. A suggested due date in ISO format (YYYY-MM-DD) based on task complexity and dependencies
       
       FOR EACH SUBTASK, PROVIDE:
       1. A specific, actionable title (8 words or less)
       2. Accurate time estimates in minutes
       3. Rich contextual information explaining exactly how to complete this subtask (2-3 sentences)
+      4. A suggested due date in ISO format (YYYY-MM-DD) that falls before the parent task due date
       
       TIME ESTIMATION GUIDELINES:
       - For unfamiliar activities, add 50% more time than you think is needed
@@ -242,13 +246,19 @@ Always maintain a helpful, encouraging tone while providing highly detailed, act
       complexity: task.complexity,
       context: task.context,
       actionItems: task.actionItems,
+      dueDate: task.dueDate,
+      addedToCalendar: false,
+      reminderEnabled: false,
+      reminderTime: undefined,
       subtasks: task.subtasks 
         ? task.subtasks.map(subtask => ({
             id: nanoid(),
             title: subtask.title,
             completed: false,
             estimatedMinutes: subtask.estimatedMinutes,
-            context: subtask.context
+            context: subtask.context,
+            dueDate: subtask.dueDate,
+            addedToCalendar: false
           }))
         : []
     }));
