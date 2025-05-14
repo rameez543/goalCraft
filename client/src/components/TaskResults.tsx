@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import TaskItem from './TaskItem';
 import ProgressUpdateForm from './ProgressUpdateForm';
 import RoadblockForm from './RoadblockForm';
+import { RoadblockTips } from './AICoach';
 import { Goal } from '../types';
 
 interface TaskResultsProps {
@@ -148,9 +149,12 @@ const TaskResults: React.FC<TaskResultsProps> = ({
         
         {/* Display roadblocks if available */}
         {goal.roadblocks && (
-          <div className="mb-4 p-3 bg-red-50 rounded-lg border border-red-100">
-            <h4 className="text-sm font-medium text-red-700 mb-1">Roadblock Reported:</h4>
-            <p className="text-sm text-red-600">{goal.roadblocks}</p>
+          <div className="mb-4">
+            <div className="p-3 bg-red-50 rounded-lg border border-red-100 mb-2">
+              <h4 className="text-sm font-medium text-red-700 mb-1">Roadblock Reported:</h4>
+              <p className="text-sm text-red-600">{goal.roadblocks}</p>
+            </div>
+            <RoadblockTips goalId={goal.id} />
           </div>
         )}
         

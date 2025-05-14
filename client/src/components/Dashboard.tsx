@@ -4,6 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useGoals } from '../contexts/GoalContext';
 import { Goal } from '../types';
+import AICoach, { RoadblockTips } from './AICoach';
 
 const Dashboard: React.FC = () => {
   const { goals, loading } = useGoals();
@@ -43,6 +44,9 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* AI Coach Message */}
+      <AICoach />
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Overall Progress Card */}
         <Card>

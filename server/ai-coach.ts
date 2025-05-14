@@ -146,7 +146,8 @@ export async function generateRoadblockTips(goal: Goal): Promise<string[]> {
     });
     
     // Parse the response
-    const result = JSON.parse(response.choices[0].message.content);
+    const messageContent = response.choices[0].message.content || '{"tips":["Break down the challenge into smaller steps.","Consider seeking help from someone with expertise.","Take a break and return with fresh perspective."]}';
+    const result = JSON.parse(messageContent);
     
     // Ensure we're returning an array of strings
     if (Array.isArray(result.tips)) {
