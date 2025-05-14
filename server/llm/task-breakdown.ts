@@ -101,6 +101,12 @@ export async function breakdownGoal(
             completed: false,
             estimatedMinutes: 30,
             complexity: 'medium',
+            addedToCalendar: false,
+            reminderEnabled: false,
+            reminderTime: undefined,
+            enableWhatsapp: false,
+            whatsappNumber: undefined,
+            reminderFrequency: 'task-only',
             subtasks: []
           },
           {
@@ -109,6 +115,12 @@ export async function breakdownGoal(
             completed: false,
             estimatedMinutes: 30,
             complexity: 'medium',
+            addedToCalendar: false,
+            reminderEnabled: false,
+            reminderTime: undefined,
+            enableWhatsapp: false,
+            whatsappNumber: undefined,
+            reminderFrequency: 'task-only',
             subtasks: []
           },
           {
@@ -117,6 +129,12 @@ export async function breakdownGoal(
             completed: false,
             estimatedMinutes: timeConstraintMinutes ? timeConstraintMinutes - 60 : 60,
             complexity: 'medium',
+            addedToCalendar: false,
+            reminderEnabled: false,
+            reminderTime: undefined,
+            enableWhatsapp: false,
+            whatsappNumber: undefined,
+            reminderFrequency: 'task-only',
             subtasks: []
           }
         ],

@@ -47,14 +47,11 @@ export async function generateCompletion(params: {
   
   try {
     if (LLM_PROVIDER === 'anthropic' && anthropicClient) {
-      const messages = [];
-      if (systemPrompt) {
-        messages.push({
-          role: 'system',
-          content: systemPrompt,
-        });
-      }
-      messages.push({
+      // For Anthropic, we need to use their specified message format
+      const anthropicMessages: {role: 'user' | 'assistant'; content: string}[] = [];
+      
+      // Add user message
+      anthropicMessages.push({
         role: 'user',
         content: userPrompt,
       });
@@ -62,28 +59,38 @@ export async function generateCompletion(params: {
       const response = await anthropicClient.messages.create({
         model: model || getModel(),
         max_tokens: 4000,
-        messages,
-        system: systemPrompt,
+        messages: anthropicMessages,
+        system: systemPrompt, // System prompt is a separate parameter
       });
 
-      return response.content[0].text;
+      // Extract text from the response
+      if (response.content && response.content.length > 0 && 'text' in response.content[0]) {
+        return response.content[0].text;
+      } else {
+        return 'Error: Unable to extract response text';
+      }
     } else if (openaiClient) {
       // Default to OpenAI
-      const messages = [];
+      // For OpenAI, we build the messages array
+      const openaiMessages: {role: 'system' | 'user' | 'assistant'; content: string}[] = [];
+      
+      // Add system message if provided
       if (systemPrompt) {
-        messages.push({
+        openaiMessages.push({
           role: 'system',
           content: systemPrompt,
         });
       }
-      messages.push({
+      
+      // Add user message
+      openaiMessages.push({
         role: 'user',
         content: userPrompt,
       });
 
       const response = await openaiClient.chat.completions.create({
         model: model || getModel(),
-        messages,
+        messages: openaiMessages,
         response_format: responseFormat === 'json_object' ? { type: 'json_object' } : undefined,
       });
 
