@@ -6,8 +6,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useGoals } from '../contexts/GoalContext';
 import { useToast } from '@/hooks/use-toast';
+import { NotificationChannel } from '../types';
 
 const TaskInputForm: React.FC = () => {
   const [goalInput, setGoalInput] = useState('');

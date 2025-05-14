@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { apiRequest } from '@/lib/queryClient';
 import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { Goal, GoalContextType } from '../types';
+import { Goal, GoalContextType, ProgressUpdateOptions, RoadblockOptions, NotificationChannel } from '../types';
 import { saveGoalsToLocalStorage, getGoalsFromLocalStorage } from '../lib/localStorage';
 import { useAuth } from './AuthContext';
 
@@ -60,7 +60,10 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const createGoal = async (
     title: string,
     timeConstraintMinutes?: number,
-    additionalInfo?: string
+    additionalInfo?: string,
+    notificationChannels?: NotificationChannel[],
+    contactEmail?: string,
+    contactPhone?: string
   ): Promise<void> => {
     try {
       setLoading(true);
@@ -80,7 +83,10 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const response = await apiRequest('POST', '/api/goals', {
         title,
         timeConstraintMinutes,
-        additionalInfo
+        additionalInfo,
+        notificationChannels,
+        contactEmail,
+        contactPhone
       });
       
       const newGoal = await response.json();
@@ -244,6 +250,83 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const addProgressUpdate = async (options: ProgressUpdateOptions): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { goalId, updateMessage, notifyChannels, contactEmail, contactPhone } = options;
+      
+      const response = await apiRequest('POST', `/api/goals/${goalId}/progress`, {
+        updateMessage,
+        notifyChannels,
+        contactEmail,
+        contactPhone
+      });
+      
+      const updatedGoal = await response.json();
+      
+      // Update goals with the new state
+      setGoals(prevGoals => 
+        prevGoals.map(goal => goal.id === updatedGoal.id ? updatedGoal : goal)
+      );
+      
+      toast({
+        title: 'Progress updated',
+        description: 'Your progress update has been recorded and notifications sent.',
+      });
+    } catch (err) {
+      setError('Failed to update progress. Please try again.');
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update progress. Please try again.',
+      });
+      console.error('Error updating progress:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const reportRoadblock = async (options: RoadblockOptions): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { goalId, description, needsHelp, notifyChannels, contactEmail, contactPhone } = options;
+      
+      const response = await apiRequest('POST', `/api/goals/${goalId}/roadblock`, {
+        description,
+        needsHelp,
+        notifyChannels,
+        contactEmail,
+        contactPhone
+      });
+      
+      const updatedGoal = await response.json();
+      
+      // Update goals with the new state
+      setGoals(prevGoals => 
+        prevGoals.map(goal => goal.id === updatedGoal.id ? updatedGoal : goal)
+      );
+      
+      toast({
+        title: 'Roadblock reported',
+        description: 'Your roadblock has been recorded and notifications sent.',
+      });
+    } catch (err) {
+      setError('Failed to report roadblock. Please try again.');
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to report roadblock. Please try again.',
+      });
+      console.error('Error reporting roadblock:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <GoalContext.Provider value={{ 
       goals, 
@@ -252,7 +335,9 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       createGoal, 
       deleteGoal, 
       toggleTaskCompletion,
-      toggleSubtaskCompletion
+      toggleSubtaskCompletion,
+      addProgressUpdate,
+      reportRoadblock
     }}>
       {children}
     </GoalContext.Provider>

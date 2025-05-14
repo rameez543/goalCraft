@@ -217,6 +217,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Add progress update for a goal
+  app.post("/api/goals/:id/progress", async (req: Request, res: Response) => {
+    try {
+      const goalId = parseInt(req.params.id);
+      if (isNaN(goalId)) {
+        res.status(400).json({ message: "Invalid goal ID" });
+        return;
+      }
+      
+      const validatedData = progressUpdateSchema.parse({
+        ...req.body,
+        goalId
+      });
+      
+      // Get the goal
+      const goal = await storage.getGoal(goalId);
+      if (!goal) {
+        res.status(404).json({ message: "Goal not found" });
+        return;
+      }
+      
+      // Save progress update to goal
+      const updatedGoal = await storage.updateGoal(goalId, {
+        lastProgressUpdate: validatedData.updateMessage
+      });
+      
+      if (!updatedGoal) {
+        res.status(404).json({ message: "Failed to update goal" });
+        return;
+      }
+      
+      // Send notifications (async)
+      const contactEmail = req.body.contactEmail;
+      const contactPhone = req.body.contactPhone;
+      const notifyChannels = validatedData.notifyChannels || [];
+      
+      notifyProgressUpdate(
+        updatedGoal, 
+        validatedData.updateMessage,
+        notifyChannels as NotificationChannel[],
+        contactEmail,
+        contactPhone
+      ).catch(err => console.error("Failed to send progress update notification:", err));
+      
+      res.json(updatedGoal);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        res.status(400).json({ message: validationError.message });
+        return;
+      }
+      
+      console.error("Error adding progress update:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to add progress update" 
+      });
+    }
+  });
+  
+  // Report roadblock for a goal
+  app.post("/api/goals/:id/roadblock", async (req: Request, res: Response) => {
+    try {
+      const goalId = parseInt(req.params.id);
+      if (isNaN(goalId)) {
+        res.status(400).json({ message: "Invalid goal ID" });
+        return;
+      }
+      
+      const validatedData = roadblockSchema.parse({
+        ...req.body,
+        goalId
+      });
+      
+      // Get the goal
+      const goal = await storage.getGoal(goalId);
+      if (!goal) {
+        res.status(404).json({ message: "Goal not found" });
+        return;
+      }
+      
+      // Save roadblock to goal
+      const updatedGoal = await storage.updateGoal(goalId, {
+        roadblocks: validatedData.description
+      });
+      
+      if (!updatedGoal) {
+        res.status(404).json({ message: "Failed to update goal" });
+        return;
+      }
+      
+      // Send notifications (async)
+      const contactEmail = req.body.contactEmail;
+      const contactPhone = req.body.contactPhone;
+      const notifyChannels = validatedData.notifyChannels || [];
+      
+      notifyRoadblock(
+        updatedGoal, 
+        validatedData.description,
+        notifyChannels as NotificationChannel[],
+        contactEmail,
+        contactPhone
+      ).catch(err => console.error("Failed to send roadblock notification:", err));
+      
+      res.json(updatedGoal);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        res.status(400).json({ message: validationError.message });
+        return;
+      }
+      
+      console.error("Error reporting roadblock:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to report roadblock" 
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
