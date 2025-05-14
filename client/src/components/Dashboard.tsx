@@ -36,7 +36,7 @@ const Dashboard: React.FC = () => {
   }, [goals, whatsAppContactSaved]);
 
   // Handle enabling WhatsApp notifications
-  const handleEnableWhatsApp = async (phoneNumber: string) => {
+  const handleEnableWhatsApp = async (phoneNumber: string): Promise<void> => {
     try {
       // Save the WhatsApp number to user's settings
       await updateGlobalSettings({
@@ -45,7 +45,6 @@ const Dashboard: React.FC = () => {
       });
       
       setWhatsAppContactSaved(true);
-      return true;
     } catch (error) {
       console.error('Error saving WhatsApp settings:', error);
       throw error;

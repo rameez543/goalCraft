@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { apiRequest } from '@/lib/queryClient';
 import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { Goal, GoalContextType, ProgressUpdateOptions, RoadblockOptions, NotificationChannel } from '../types';
+import { Goal, GoalContextType, ProgressUpdateOptions, RoadblockOptions, NotificationChannel, UserSettings } from '../types';
 import { saveGoalsToLocalStorage, getGoalsFromLocalStorage } from '../lib/localStorage';
 import { useAuth } from './AuthContext';
 
@@ -473,6 +473,57 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Update global user settings (e.g., WhatsApp preferences)
+  const updateGlobalSettings = async (settings: UserSettings): Promise<void> => {
+    try {
+      // Store settings in localStorage for now
+      // In a real app, these would be saved to the server
+      const userSettings = JSON.parse(localStorage.getItem('userSettings') || '{}');
+      const updatedSettings = { ...userSettings, ...settings };
+      localStorage.setItem('userSettings', JSON.stringify(updatedSettings));
+      
+      // For whatsapp notification specifically, update each task with the new settings
+      if (settings.whatsappNumber && settings.enableWhatsappNotifications) {
+        // Apply WhatsApp settings to all tasks that have reminders enabled but no WhatsApp config
+        const updatedGoals = goals.map(goal => {
+          const updatedTasks = goal.tasks.map(task => {
+            if (task.reminderEnabled && !task.enableWhatsapp) {
+              return {
+                ...task,
+                enableWhatsapp: true,
+                whatsappNumber: settings.whatsappNumber
+              };
+            }
+            return task;
+          });
+          
+          return { ...goal, tasks: updatedTasks };
+        });
+        
+        setGoals(updatedGoals);
+        
+        // Sync changes with the server
+        // This would be an API call in a real implementation
+        saveGoalsToLocalStorage(updatedGoals);
+      }
+      
+      toast({
+        title: 'Settings updated',
+        description: 'Your notification preferences have been saved.',
+      });
+      
+      return;
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update settings. Please try again.',
+      });
+      console.error('Error updating settings:', err);
+      throw err;
+    }
+  };
+
   return (
     <GoalContext.Provider value={{ 
       goals, 
@@ -485,7 +536,8 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       addProgressUpdate,
       reportRoadblock,
       updateTaskSchedule,
-      updateSubtaskSchedule
+      updateSubtaskSchedule,
+      updateGlobalSettings
     }}>
       {children}
     </GoalContext.Provider>

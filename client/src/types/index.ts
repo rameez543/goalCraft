@@ -59,6 +59,14 @@ export interface RoadblockOptions {
   contactPhone?: string;
 }
 
+export interface UserSettings {
+  whatsappNumber?: string;
+  enableWhatsappNotifications?: boolean;
+  defaultNotificationChannels?: NotificationChannel[];
+  contactEmail?: string;
+  contactPhone?: string;
+}
+
 export type GoalContextType = {
   goals: Goal[];
   loading: boolean;
@@ -84,6 +92,8 @@ export type GoalContextType = {
       addedToCalendar?: boolean;
       reminderEnabled?: boolean;
       reminderTime?: string;
+      enableWhatsapp?: boolean;
+      whatsappNumber?: string;
     }
   ) => Promise<void>;
   updateSubtaskSchedule: (
@@ -95,4 +105,5 @@ export type GoalContextType = {
       addedToCalendar?: boolean;
     }
   ) => Promise<void>;
+  updateGlobalSettings: (settings: UserSettings) => Promise<void>;
 };
