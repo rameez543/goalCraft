@@ -77,6 +77,9 @@ export const createGoalSchema = z.object({
   title: z.string().min(3, "Goal must be at least 3 characters"),
   timeConstraintMinutes: z.number().optional(),
   additionalInfo: z.string().optional(),
+  notificationChannels: z.array(z.string()).optional(),
+  contactEmail: z.string().email().optional(),
+  contactPhone: z.string().optional(),
 });
 
 export type CreateGoalRequest = z.infer<typeof createGoalSchema>;
@@ -99,3 +102,22 @@ export const updateSubtaskSchema = z.object({
 });
 
 export type UpdateSubtaskRequest = z.infer<typeof updateSubtaskSchema>;
+
+// Schema for progress updates
+export const progressUpdateSchema = z.object({
+  goalId: z.number(),
+  updateMessage: z.string().min(3, "Update must be at least 3 characters"),
+  notifyChannels: z.array(z.string()).optional(),
+});
+
+export type ProgressUpdateRequest = z.infer<typeof progressUpdateSchema>;
+
+// Schema for roadblock reports
+export const roadblockSchema = z.object({
+  goalId: z.number(),
+  description: z.string().min(3, "Description must be at least 3 characters"),
+  needsHelp: z.boolean().optional(),
+  notifyChannels: z.array(z.string()).optional(),
+});
+
+export type RoadblockRequest = z.infer<typeof roadblockSchema>;

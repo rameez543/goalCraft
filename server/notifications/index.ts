@@ -1,13 +1,15 @@
 import { Goal, Task } from '@shared/schema';
 import * as slackService from './slack';
 import * as emailService from './email';
+import * as whatsappService from './whatsapp';
 
 /**
  * Notification channels enum
  */
 export enum NotificationChannel {
   SLACK = 'slack',
-  EMAIL = 'email'
+  EMAIL = 'email',
+  WHATSAPP = 'whatsapp'
 }
 
 /**
@@ -16,7 +18,8 @@ export enum NotificationChannel {
 export async function notifyGoalCreated(
   goal: Goal, 
   channels: NotificationChannel[] = [],
-  email?: string
+  email?: string,
+  phoneNumber?: string
 ): Promise<void> {
   // If no channels specified, check goal's notification channels
   if (channels.length === 0 && goal.notificationChannels) {
@@ -37,6 +40,10 @@ export async function notifyGoalCreated(
     promises.push(emailService.emailGoalCreated(goal, email));
   }
   
+  if (channels.includes(NotificationChannel.WHATSAPP) && phoneNumber) {
+    promises.push(whatsappService.notifyGoalCreatedWhatsApp(goal, phoneNumber));
+  }
+  
   // Wait for all notifications to complete
   await Promise.allSettled(promises);
 }
@@ -48,7 +55,8 @@ export async function notifyTaskCompleted(
   goal: Goal,
   task: Task,
   channels: NotificationChannel[] = [],
-  email?: string
+  email?: string,
+  phoneNumber?: string
 ): Promise<void> {
   // If no channels specified, check goal's notification channels
   if (channels.length === 0 && goal.notificationChannels) {
@@ -69,6 +77,10 @@ export async function notifyTaskCompleted(
     promises.push(emailService.emailTaskCompleted(goal, task, email));
   }
   
+  if (channels.includes(NotificationChannel.WHATSAPP) && phoneNumber) {
+    promises.push(whatsappService.notifyTaskCompletedWhatsApp(goal, task, phoneNumber));
+  }
+  
   // Wait for all notifications to complete
   await Promise.allSettled(promises);
 }
@@ -80,7 +92,8 @@ export async function notifyProgressUpdate(
   goal: Goal,
   progressUpdate: string,
   channels: NotificationChannel[] = [],
-  email?: string
+  email?: string,
+  phoneNumber?: string
 ): Promise<void> {
   // If no channels specified, check goal's notification channels
   if (channels.length === 0 && goal.notificationChannels) {
@@ -102,6 +115,14 @@ export async function notifyProgressUpdate(
     // Could implement one in the future
   }
   
+  if (channels.includes(NotificationChannel.WHATSAPP) && phoneNumber) {
+    // Send directly as a WhatsApp message
+    promises.push(whatsappService.sendWhatsAppMessage(
+      phoneNumber, 
+      `📝 *Progress Update*\nGoal: "${goal.title}"\n\n${progressUpdate}`
+    ));
+  }
+  
   // Wait for all notifications to complete
   await Promise.allSettled(promises);
 }
@@ -113,7 +134,8 @@ export async function notifyRoadblock(
   goal: Goal,
   roadblockDescription: string,
   channels: NotificationChannel[] = [],
-  email?: string
+  email?: string,
+  phoneNumber?: string
 ): Promise<void> {
   // If no channels specified, check goal's notification channels
   if (channels.length === 0 && goal.notificationChannels) {
@@ -132,6 +154,10 @@ export async function notifyRoadblock(
   
   if (channels.includes(NotificationChannel.EMAIL) && email) {
     promises.push(emailService.emailRoadblockReported(goal, roadblockDescription, email));
+  }
+  
+  if (channels.includes(NotificationChannel.WHATSAPP) && phoneNumber) {
+    promises.push(whatsappService.notifyRoadblockWhatsApp(goal, roadblockDescription, phoneNumber));
   }
   
   // Wait for all notifications to complete

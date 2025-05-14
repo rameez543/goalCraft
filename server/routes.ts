@@ -2,8 +2,20 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { breakdownGoal } from "./openai";
-import { createGoalSchema, updateTaskSchema, updateSubtaskSchema } from "@shared/schema";
-import { notifyGoalCreated, notifyTaskCompleted, NotificationChannel } from "./notifications";
+import { 
+  createGoalSchema, 
+  updateTaskSchema, 
+  updateSubtaskSchema, 
+  progressUpdateSchema, 
+  roadblockSchema 
+} from "@shared/schema";
+import { 
+  notifyGoalCreated, 
+  notifyTaskCompleted, 
+  notifyProgressUpdate, 
+  notifyRoadblock, 
+  NotificationChannel 
+} from "./notifications";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
