@@ -1,13 +1,56 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useGoals } from '../contexts/GoalContext';
 import { Goal } from '../types';
 import AICoach, { RoadblockTips } from './AICoach';
+import { WhatsAppNudge } from './WhatsAppNudge';
 
 const Dashboard: React.FC = () => {
-  const { goals, loading } = useGoals();
+  const { goals, loading, updateGlobalSettings } = useGoals();
+  
+  // State for WhatsApp notification nudge
+  const [showWhatsAppNudge, setShowWhatsAppNudge] = useState(false);
+  const [whatsAppContactSaved, setWhatsAppContactSaved] = useState(false);
+  
+  // Check if WhatsApp notification preference has been set
+  useEffect(() => {
+    // Check if the user has tasks and hasn't already set up WhatsApp
+    if (goals.length > 0 && !whatsAppContactSaved) {
+      // Check if any existing tasks have WhatsApp notifications enabled
+      const hasWhatsAppEnabled = goals.some(goal => 
+        goal.tasks.some(task => task.enableWhatsapp)
+      );
+      
+      // Only show the nudge if WhatsApp isn't already enabled
+      if (!hasWhatsAppEnabled) {
+        // Show the nudge after a short delay (user has time to see dashboard first)
+        const timer = setTimeout(() => {
+          setShowWhatsAppNudge(true);
+        }, 1500);
+        
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [goals, whatsAppContactSaved]);
+
+  // Handle enabling WhatsApp notifications
+  const handleEnableWhatsApp = async (phoneNumber: string) => {
+    try {
+      // Save the WhatsApp number to user's settings
+      await updateGlobalSettings({
+        whatsappNumber: phoneNumber,
+        enableWhatsappNotifications: true
+      });
+      
+      setWhatsAppContactSaved(true);
+      return true;
+    } catch (error) {
+      console.error('Error saving WhatsApp settings:', error);
+      throw error;
+    }
+  };
 
   // Filter goals with roadblocks
   const goalsWithRoadblocks = goals.filter(goal => goal.roadblocks);
@@ -44,6 +87,14 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* WhatsApp Notification Nudge */}
+      <WhatsAppNudge 
+        isOpen={showWhatsAppNudge}
+        onOpenChange={setShowWhatsAppNudge}
+        onEnableWhatsApp={handleEnableWhatsApp}
+        onSkip={() => setShowWhatsAppNudge(false)}
+      />
+      
       {/* AI Coach Message */}
       <AICoach />
       
