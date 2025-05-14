@@ -6,7 +6,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import session from 'express-session';
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import ws from 'ws';
-import { z } from 'zod';
+import { z, ZodError } from 'zod';
 import { fromZodError } from 'zod-validation-error';
 import { type User } from '@shared/schema';
 import connectPgSimple from 'connect-pg-simple';
@@ -247,21 +247,17 @@ export function setupAuth(app: express.Express) {
 
 // Middleware to check if user is authenticated
 export function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
-  // Authentication check temporarily disabled - always pass through
-  return next();
+  if (req.isAuthenticated()) {
+    return next();
+  }
   
-  // Original authentication logic (commented out)
-  // if (req.isAuthenticated()) {
-  //   return next();
-  // }
-  // 
-  // // Special case for GET requests to /api/goals
-  // // If user is not authenticated, just return empty array instead of error
-  // if (req.method === 'GET' && req.path === '/') {
-  //   return res.json([]);
-  // }
-  // 
-  // res.status(401).json({ message: 'Unauthorized' });
+  // Special case for GET requests to /api/goals
+  // If user is not authenticated, just return empty array instead of error
+  if (req.method === 'GET' && req.path === '/') {
+    return res.json([]);
+  }
+  
+  res.status(401).json({ message: 'Unauthorized' });
 }
 
 // Middleware to check if user is authenticated for frontend

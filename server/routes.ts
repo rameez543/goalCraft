@@ -19,8 +19,14 @@ import {
 } from "./notifications";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import { setupAuth, ensureAuthenticated } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication
+  setupAuth(app);
+  
+  // Apply authentication middleware to all goal-related API endpoints
+  app.use('/api/goals', ensureAuthenticated);
   // Create a new goal
   app.post("/api/goals", async (req: Request, res: Response) => {
     try {
@@ -34,13 +40,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedData.additionalInfo
       );
       
-      // Authentication temporarily disabled
-      // const userId = req.isAuthenticated() && req.user 
-      //   ? (req.user as any).username || "anonymous"
-      //   : "anonymous";
-      
-      // Use anonymous user ID for all users temporarily
-      const userId = "anonymous";
+      // Get the user ID from the authenticated user
+      const userId = req.isAuthenticated() && req.user 
+        ? String((req.user as any).id) || "anonymous"
+        : "anonymous";
       
       // Parse notification channels from request if provided
       let notificationChannels: string[] = [];
@@ -85,19 +88,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all goals
   app.get("/api/goals", async (req: Request, res: Response) => {
     try {
-      // Authentication temporarily disabled - always return all goals
+      // Get goals for the authenticated user
       let goals;
       
-      // if (req.isAuthenticated() && req.user) {
-      //   const userId = (req.user as any).username || "anonymous";
-      //   goals = await storage.getGoals(userId);
-      // } else {
-      //   // Return empty array if not authenticated
-      //   goals = [];
-      // }
-      
-      // Temporarily get all goals without authentication
-      goals = await storage.getGoals();
+      if (req.isAuthenticated() && req.user) {
+        const userId = String((req.user as any).id) || "anonymous";
+        goals = await storage.getGoals(userId);
+      } else {
+        // Return empty array if not authenticated
+        goals = [];
+      }
       
       res.json(goals);
     } catch (error) {
