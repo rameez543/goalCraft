@@ -136,94 +136,46 @@ const TaskItem: React.FC<TaskItemProps> = ({
             </div>
             
             {/* Time, Complexity, and Due Date Information */}
-            <div className="flex flex-wrap items-center gap-2 mt-1 text-xs">
+            <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
               {task.estimatedMinutes && (
-                <span className="flex items-center text-blue-600">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-4 w-4 mr-1" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
-                    />
-                  </svg>
-                  {task.estimatedMinutes} min
+                <span className="bg-blue-50 text-blue-600 py-1 px-2 rounded-full">
+                  <span>⏱️ {task.estimatedMinutes} min</span>
                 </span>
               )}
               
               {task.complexity && (
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                  task.complexity === 'low' ? 'bg-green-100 text-green-800' :
-                  task.complexity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {task.complexity}
+                <span 
+                  className={`py-1 px-2 rounded-full ${
+                    task.complexity === 'low' 
+                      ? 'bg-green-50 text-green-600' 
+                      : task.complexity === 'medium'
+                      ? 'bg-yellow-50 text-yellow-600'
+                      : 'bg-red-50 text-red-600'
+                  }`}
+                >
+                  {task.complexity === 'low' ? '🟢 Easy' : 
+                   task.complexity === 'medium' ? '🟡 Medium' : '🔴 Hard'}
                 </span>
               )}
               
               {task.dueDate && (
-                <span className="flex items-center text-purple-600">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-4 w-4 mr-1 flex-shrink-0" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" 
-                    />
-                  </svg>
-                  <span className="truncate">{format(new Date(task.dueDate), 'MMM d, yyyy')}</span>
+                <span 
+                  className={`bg-purple-50 text-purple-600 py-1 px-2 rounded-full`}
+                  title={format(new Date(task.dueDate), 'PPP')}
+                >
+                  📆 {format(new Date(task.dueDate), 'MMM d')}
                 </span>
               )}
               
               {task.addedToCalendar && (
-                <span className="flex items-center text-green-600">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-4 w-4 mr-1 flex-shrink-0" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" 
-                    />
-                  </svg>
-                  <span className="truncate">Calendar</span>
+                <span className="bg-teal-50 text-teal-600 py-1 px-2 rounded-full">
+                  🗓️ In Calendar
                 </span>
               )}
               
               {task.enableWhatsapp && (
-                <span className="flex items-center text-green-600">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-4 w-4 mr-1 flex-shrink-0" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" 
-                    />
-                  </svg>
-                  <span className="truncate">WhatsApp</span>
+                <span className="bg-green-50 text-green-600 py-1 px-2 rounded-full">
+                  💬 WhatsApp
                 </span>
               )}
             </div>

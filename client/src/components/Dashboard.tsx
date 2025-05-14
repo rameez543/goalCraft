@@ -105,24 +105,26 @@ const Dashboard: React.FC = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Overall Progress Card */}
-        <Card>
+        <Card className="border border-blue-100 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">Overall Progress</CardTitle>
+            <CardTitle className="text-lg font-medium flex items-center">
+              <span className="text-xl mr-2">📊</span> Overall Progress
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
               <Progress 
                 value={overallProgress} 
-                className="h-2 flex-1 mr-4" 
+                className="h-3 flex-1 mr-4 overflow-hidden rounded-full" 
                 style={{
-                  background: 'linear-gradient(to right, #f3f4f6, #f3f4f6)',
+                  background: 'linear-gradient(to right, #f0f9ff, #e0f2fe)',
                   boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.05)'
                 }}
               />
-              <span className="text-2xl font-bold">{overallProgress}%</span>
+              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{overallProgress}%</span>
             </div>
             <p className="text-sm text-gray-500 mt-2">
-              {goals.length} active goal{goals.length !== 1 ? 's' : ''}
+              ✨ {goals.length} active goal{goals.length !== 1 ? 's' : ''}
             </p>
             
             {/* Progress Breakdown */}
@@ -163,31 +165,35 @@ const Dashboard: React.FC = () => {
         </Card>
 
         {/* Roadblocks Card */}
-        <Card>
+        <Card className="border border-red-50 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">Roadblocks</CardTitle>
+            <CardTitle className="text-lg font-medium flex items-center">
+              <span className="text-xl mr-2">🚧</span> Roadblocks
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
-              <div className="text-2xl font-bold text-red-500">{goalsWithRoadblocks.length}</div>
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-50 text-red-500">
+                <span className="text-xl font-bold">{goalsWithRoadblocks.length}</span>
+              </div>
               <div className="ml-4 text-sm text-gray-500">
                 {goalsWithRoadblocks.length === 0 
-                  ? 'No roadblocks reported' 
-                  : `Goal${goalsWithRoadblocks.length !== 1 ? 's' : ''} with roadblocks`}
+                  ? '✅ No roadblocks reported' 
+                  : `⚠️ Goal${goalsWithRoadblocks.length !== 1 ? 's' : ''} with roadblocks`}
               </div>
             </div>
             
             {/* Roadblocks List Preview */}
             {goalsWithRoadblocks.length > 0 && (
-              <div className="mt-4 space-y-3 max-h-24 overflow-y-auto">
+              <div className="mt-4 space-y-3 max-h-28 overflow-y-auto">
                 {goalsWithRoadblocks.slice(0, 2).map(goal => (
-                  <div key={goal.id} className="p-2 bg-red-50 rounded-md border border-red-100">
-                    <div className="text-xs font-medium text-red-800 truncate">{goal.title}</div>
+                  <div key={goal.id} className="p-3 bg-red-50 rounded-lg border border-red-100">
+                    <div className="text-sm font-medium text-red-800 truncate">🚩 {goal.title}</div>
                     <div className="text-xs text-red-600 line-clamp-1 mt-1">{goal.roadblocks}</div>
                   </div>
                 ))}
                 {goalsWithRoadblocks.length > 2 && (
-                  <div className="text-xs text-center text-red-500">
+                  <div className="text-xs text-center text-red-500 p-1 bg-red-50 rounded-lg">
                     +{goalsWithRoadblocks.length - 2} more roadblocks
                   </div>
                 )}
@@ -197,32 +203,37 @@ const Dashboard: React.FC = () => {
         </Card>
 
         {/* Time Tracking Card */}
-        <Card>
+        <Card className="border border-blue-100 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">Time Tracking</CardTitle>
+            <CardTitle className="text-lg font-medium flex items-center">
+              <span className="text-xl mr-2">⏱️</span> Time Tracking
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center">
-              <div className="text-2xl font-bold">
-                {goals.reduce((acc, goal) => acc + (goal.totalEstimatedMinutes || 0), 0)} min
+            <div className="flex items-center mb-3">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 text-blue-600">
+                <span className="text-xl font-bold">⏰</span>
               </div>
-              <div className="ml-4 text-sm text-gray-500">
-                Total estimated time
+              <div className="ml-4">
+                <div className="text-sm text-gray-500">Total time</div>
+                <div className="text-lg font-bold text-blue-600">
+                  {goals.reduce((acc, goal) => acc + (goal.totalEstimatedMinutes || 0), 0)} min
+                </div>
               </div>
             </div>
             
             {/* Top Performing Goals */}
             {goals.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <h4 className="text-xs font-medium text-gray-500 mb-2">Top Progress</h4>
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="flex items-center mb-2">
+                  <span className="text-sm font-medium text-gray-700">🎯 Top Progress</span>
+                </div>
                 {topProgressGoals.map(goal => (
-                  <div key={goal.id} className="flex items-center mb-2">
-                    <div 
-                      className="w-10 h-2 mr-2 rounded-sm bg-gradient-to-r from-green-400 to-blue-500"
-                      style={{ width: `${Math.max(goal.progress, 5)}%` }}
-                    ></div>
-                    <div className="mr-2 text-xs font-medium">{goal.progress}%</div>
-                    <div className="text-xs text-gray-500 truncate">{goal.title}</div>
+                  <div key={goal.id} className="flex items-center mb-2 p-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+                    <div className="mr-3 flex-shrink-0 bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center">
+                      <span className="font-bold">{goal.progress}%</span>
+                    </div>
+                    <div className="text-sm text-gray-700 truncate">{goal.title}</div>
                   </div>
                 ))}
               </div>
