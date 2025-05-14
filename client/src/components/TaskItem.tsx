@@ -4,6 +4,7 @@ import SubtaskItem from './SubtaskItem';
 import { Task, ReminderFrequency } from '../types';
 import { format } from 'date-fns';
 import { TaskScheduler } from './TaskScheduler';
+import { TaskDiscussion } from './TaskDiscussion';
 import { 
   Dialog,
   DialogContent,
@@ -52,6 +53,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   contactPhone,
 }) => {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [isDiscussDialogOpen, setIsDiscussDialogOpen] = useState(false);
 
   const handleToggle = async (checked: boolean) => {
     await onToggleTaskComplete(goalId, task.id, checked);
@@ -129,6 +131,27 @@ const TaskItem: React.FC<TaskItemProps> = ({
                       onEnableReminder={handleEnableReminder}
                       onEnableWhatsapp={handleEnableWhatsapp}
                       contactPhone={contactPhone}
+                    />
+                  </DialogContent>
+                </Dialog>
+                
+                <Dialog open={isDiscussDialogOpen} onOpenChange={setIsDiscussDialogOpen}>
+                  <DialogTrigger asChild>
+                    <button 
+                      className="p-1 text-gray-500 hover:text-green-600 rounded-full bg-gray-50 hover:bg-green-50 w-8 h-8 flex items-center justify-center transition-colors" 
+                      title="Discuss with AI"
+                    >
+                      <span className="text-lg">💬</span>
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="w-[95vw] max-w-3xl">
+                    <DialogHeader>
+                      <DialogTitle>💬 Discuss Task with AI</DialogTitle>
+                    </DialogHeader>
+                    <TaskDiscussion 
+                      goalId={goalId}
+                      taskId={task.id}
+                      taskTitle={task.title}
                     />
                   </DialogContent>
                 </Dialog>

@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { breakdownGoal } from "./openai";
-import { generateCoachingMessage, generateRoadblockTips } from "./ai-coach";
+import { generateCoachingMessage, generateRoadblockTips, discussTaskWithAI } from "./ai-coach";
 import { 
   createGoalSchema, 
   updateTaskSchema, 
@@ -689,6 +689,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error sending test WhatsApp message:", error);
       res.status(500).json({ 
         message: error instanceof Error ? error.message : "Failed to send test message" 
+      });
+    }
+  });
+  
+  // Discuss task with AI
+  app.post("/api/coach/discuss-task", async (req: Request, res: Response) => {
+    try {
+      const { goalId, taskId, message } = req.body;
+      
+      if (!goalId || !taskId || !message) {
+        res.status(400).json({ message: "Goal ID, task ID, and message are required" });
+        return;
+      }
+      
+      // Get the goal
+      const goal = await storage.getGoal(goalId);
+      if (!goal) {
+        res.status(404).json({ message: "Goal not found" });
+        return;
+      }
+      
+      // Find the task in the goal
+      const task = goal.tasks.find(t => t.id === taskId);
+      if (!task) {
+        res.status(404).json({ message: "Task not found" });
+        return;
+      }
+      
+      // Use OpenAI to discuss the task
+      const response = await discussTaskWithAI(goal, task, message);
+      
+      res.json({ response });
+    } catch (error) {
+      console.error("Error discussing task with AI:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to generate AI response" 
       });
     }
   });
