@@ -33,9 +33,9 @@ const Home: React.FC = () => {
         {!loading && goals.length > 0 && (
           <div className="animate-fadeIn mt-8">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="mb-6">
+              <TabsList className="mb-6" id="mainTabsList">
                 <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-                <TabsTrigger value="goals">Goal Details</TabsTrigger>
+                <TabsTrigger value="goals" id="goalsTab">Goal Details</TabsTrigger>
               </TabsList>
               
               <TabsContent value="dashboard" className="space-y-6">
