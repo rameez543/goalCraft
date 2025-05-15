@@ -131,7 +131,8 @@ export function setupAuth(app: express.Express) {
       saveUninitialized: false,
       cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        secure: false, // Set to false to work in both HTTP and HTTPS environments
+        sameSite: 'lax', // Allows the cookie to be sent in same-site requests
       },
     })
   );
