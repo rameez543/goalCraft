@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { breakdownGoal } from "./llm/task-breakdown";
 import { generateCoachingMessage, generateRoadblockTips, discussTaskWithAI } from "./llm/ai-coach";
+import { processCoachChat } from "./llm/coach-chat";
 import { 
   createGoalSchema, 
   updateTaskSchema, 
@@ -725,6 +726,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error discussing task with AI:", error);
       res.status(500).json({ 
         message: error instanceof Error ? error.message : "Failed to generate AI response" 
+      });
+    }
+  });
+  
+  // AI Coach Chat endpoint for ADHD-friendly conversational interface
+  app.post("/api/coach/chat", async (req: Request, res: Response) => {
+    try {
+      const { message, goalId } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+      
+      // Get user ID from authenticated user
+      const userId = req.isAuthenticated() && req.user 
+        ? (req.user as any).id 
+        : null;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const response = await processCoachChat({
+        message,
+        goalId,
+        userId
+      });
+      
+      res.json(response);
+    } catch (error) {
+      console.error("Error processing coach chat:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to process chat message" 
       });
     }
   });
