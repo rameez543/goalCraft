@@ -246,8 +246,35 @@ const TaskFocusedApp = () => {
     mutationFn: async (goalId: number) => {
       return await apiRequest("DELETE", `/api/goals/${goalId}`);
     },
+    onMutate: async (goalId: number) => {
+      // Capture the current goals state
+      const previousGoals = queryClient.getQueryData<Goal[]>(['/api/goals']) || [];
+      
+      // Optimistically update the goals list by removing the deleted goal
+      queryClient.setQueryData<Goal[]>(['/api/goals'], 
+        previousGoals.filter(goal => goal.id !== goalId)
+      );
+      
+      return { previousGoals };
+    },
+    onError: (err, goalId, context) => {
+      // On error, restore the previous goals state
+      if (context?.previousGoals) {
+        queryClient.setQueryData(['/api/goals'], context.previousGoals);
+      }
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete goal. Please try again.',
+      });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+      // Just refetch data silently without navigation changes
+      queryClient.refetchQueries({ 
+        queryKey: ['/api/goals'],
+        type: 'active',
+        exact: true
+      });
       toast({
         title: "🗑️ Goal deleted",
         description: "The goal and all its tasks have been removed",
