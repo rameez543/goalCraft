@@ -509,9 +509,9 @@ export default function TaskFocusedApp() {
   };
   
   return (
-    <div className="flex flex-col h-full min-h-screen bg-gradient-to-br from-gray-50 to-slate-100">
+    <div className="flex flex-col h-full min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
       {/* Header/Nav */}
-      <header className="bg-white/95 backdrop-blur shadow-sm border-b py-3 px-4 sm:px-6 sticky top-0 z-10">
+      <header className="gradient-header backdrop-blur-md shadow-sm py-3 px-4 sm:px-6 sticky top-0 z-10">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Star className="h-6 w-6 text-purple-500" />
@@ -705,9 +705,9 @@ export default function TaskFocusedApp() {
                   <div 
                     key={goal.id}
                     id={`goal-${goal.id}`}
-                    className="bg-white/90 backdrop-blur rounded-xl shadow-sm border overflow-hidden transition-all hover:shadow-md hover:translate-y-[-2px]"
+                    className="goal-card overflow-hidden"
                   >
-                    <div className="p-4 border-b bg-gradient-to-r from-gray-50 to-slate-100">
+                    <div className="p-4 border-b gradient-header">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center">
                           <button 
