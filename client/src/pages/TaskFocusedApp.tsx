@@ -377,7 +377,7 @@ export default function TaskFocusedApp() {
   return (
     <div className="flex flex-col h-full min-h-screen bg-gradient-to-br from-gray-50 to-slate-100">
       {/* Header/Nav */}
-      <header className="bg-white shadow-sm border-b py-2 px-4">
+      <header className="bg-white/95 backdrop-blur shadow-sm border-b py-3 px-6 sticky top-0 z-10">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Star className="h-6 w-6 text-purple-500" />
@@ -462,7 +462,7 @@ export default function TaskFocusedApp() {
                   todaysTasks.map(task => (
                     <div
                       key={`${task.goalId}-${task.id}`}
-                      className="bg-white rounded-lg shadow-sm border p-4 transition-all hover:shadow-md"
+                      className="bg-white/90 backdrop-blur rounded-xl shadow-sm border p-4 transition-all hover:shadow-md hover:translate-y-[-2px]"
                     >
                       <div className="flex items-center gap-3 mb-2">
                         <button
@@ -556,9 +556,9 @@ export default function TaskFocusedApp() {
                   <div 
                     key={goal.id}
                     id={`goal-${goal.id}`}
-                    className="bg-white rounded-lg shadow-sm border overflow-hidden transition-all hover:shadow-md"
+                    className="bg-white/90 backdrop-blur rounded-xl shadow-sm border overflow-hidden transition-all hover:shadow-md hover:translate-y-[-2px]"
                   >
-                    <div className="p-4 border-b bg-gray-50">
+                    <div className="p-4 border-b bg-gradient-to-r from-gray-50 to-slate-100">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center">
                           <button 
@@ -842,8 +842,13 @@ export default function TaskFocusedApp() {
                 type="submit" 
                 size="icon"
                 disabled={!input.trim() || isTyping}
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
               >
-                <Send className="h-4 w-4" />
+                {isTyping ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
               </Button>
             </form>
           </div>
