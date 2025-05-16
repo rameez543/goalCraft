@@ -565,9 +565,9 @@ const TaskFocusedApp = () => {
                     {[...goals]
                       .sort((a, b) => {
                         // Sort by priority: high → medium → low → undefined
-                        const priorityOrder = { high: 0, medium: 1, low: 2, undefined: 3 };
-                        const aPriority = priorityOrder[a.complexity || 'undefined'];
-                        const bPriority = priorityOrder[b.complexity || 'undefined'];
+                        const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2, undefined: 3 };
+                        const aPriority = priorityOrder[a.complexity as string || 'undefined'];
+                        const bPriority = priorityOrder[b.complexity as string || 'undefined'];
                         
                         return aPriority - bPriority;
                       })
@@ -600,17 +600,19 @@ const TaskFocusedApp = () => {
                           <div className="flex items-center gap-2">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Badge className={`cursor-pointer ${
-                                  goal.complexity === 'high' ? 'bg-red-100 text-red-700 hover:bg-red-200' :
-                                  goal.complexity === 'medium' ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' :
-                                  goal.complexity === 'low' ? 'bg-green-100 text-green-700 hover:bg-green-200' :
-                                  'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                } border-0`}>
+                                <div
+                                  className={`px-2 py-1 cursor-pointer rounded-full text-sm ${
+                                    goal.complexity === 'high' ? 'bg-red-100 text-red-700 hover:bg-red-200' :
+                                    goal.complexity === 'medium' ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' :
+                                    goal.complexity === 'low' ? 'bg-green-100 text-green-700 hover:bg-green-200' :
+                                    'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                  }`}
+                                >
                                   {goal.complexity === 'high' ? '😓 High Priority' : 
                                    goal.complexity === 'medium' ? '😐 Medium Priority' : 
                                    goal.complexity === 'low' ? '😌 Low Priority' : 
                                    'Set Priority'}
-                                </Badge>
+                                </div>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Set Goal Priority</DropdownMenuLabel>
@@ -790,18 +792,21 @@ const TaskFocusedApp = () => {
                                         
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
-                                            <Badge className={`text-xs cursor-pointer ${
-                                              task.completed ? 'bg-gray-100 text-gray-500' :
-                                              task.complexity === 'high' ? 'bg-red-100 text-red-700' :
-                                              task.complexity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                                              task.complexity ? 'bg-green-100 text-green-700' :
-                                              'bg-blue-100 text-blue-700'
-                                            }`}>
+                                            <div
+                                              className={`px-2 py-0.5 text-xs cursor-pointer rounded-full ${
+                                                task.completed ? 'bg-gray-100 text-gray-500' :
+                                                task.complexity === 'high' ? 'bg-red-100 text-red-700 hover:bg-red-200' :
+                                                task.complexity === 'medium' ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' :
+                                                task.complexity === 'low' ? 'bg-green-100 text-green-700 hover:bg-green-200' :
+                                                'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                              }`}
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
                                               {task.complexity === 'high' ? '😓 Hard' : 
                                                task.complexity === 'medium' ? '😐 Medium' : 
                                                task.complexity === 'low' ? '😌 Easy' :
                                                '📋 Set Priority'}
-                                            </Badge>
+                                            </div>
                                           </DropdownMenuTrigger>
                                           <DropdownMenuContent align="start">
                                             <DropdownMenuLabel>Set Priority</DropdownMenuLabel>
