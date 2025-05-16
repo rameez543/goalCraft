@@ -149,10 +149,10 @@ const TaskFocusedApp: React.FC = () => {
         completed
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
       toast({
-        title: completed ? "✅ Task completed!" : "⏪ Task reopened",
+        title: variables.completed ? "✅ Task completed!" : "⏪ Task reopened",
         duration: 1500,
       });
     }

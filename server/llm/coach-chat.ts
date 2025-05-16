@@ -107,7 +107,61 @@ Always respond in the first person as the AI coach.
   // Process response to determine type and any actions needed
   const responseType = determineResponseType(llmResponse, input.message);
   let tasksCreated = false;
+  let tasksModified = false;
   let relatedTasks: string[] = [];
+
+  // Check for task removal intent
+  const removeTaskIntent = detectRemoveTaskIntent(input.message);
+  const editTaskIntent = detectEditTaskIntent(input.message);
+  
+  // Handle task removal or editing if needed
+  if ((removeTaskIntent || editTaskIntent) && specificGoal) {
+    // Try to find the task mentioned in the message
+    const taskMentioned = findTaskInMessage(input.message, specificGoal.tasks);
+    
+    if (taskMentioned) {
+      if (removeTaskIntent) {
+        // Remove the task from the goal
+        const updatedTasks = specificGoal.tasks.filter(t => t.id !== taskMentioned.id);
+        
+        await storage.updateGoal(specificGoal.id, {
+          tasks: updatedTasks
+        });
+        
+        tasksModified = true;
+        relatedTasks = updatedTasks.map(t => t.id);
+      } 
+      else if (editTaskIntent) {
+        // Modify the task (mark as complete if that's the intent)
+        const completionIntent = input.message.toLowerCase().includes('complete') || 
+                               input.message.toLowerCase().includes('finished') ||
+                               input.message.toLowerCase().includes('done');
+        
+        const updatedTasks = specificGoal.tasks.map(t => {
+          if (t.id === taskMentioned.id) {
+            // If completion is mentioned, mark as complete
+            if (completionIntent) {
+              return { ...t, completed: true };
+            }
+            
+            // Otherwise, try to update the title if a new one can be extracted
+            const newTitle = extractNewTaskTitleFromMessage(input.message);
+            if (newTitle) {
+              return { ...t, title: newTitle };
+            }
+          }
+          return t;
+        });
+        
+        await storage.updateGoal(specificGoal.id, {
+          tasks: updatedTasks
+        });
+        
+        tasksModified = true;
+        relatedTasks = updatedTasks.map(t => t.id);
+      }
+    }
+  }
 
   // If this is a task creation response, create the tasks in the system
   if (responseType === 'task-suggestion' || responseType === 'task-creation') {
@@ -171,7 +225,7 @@ Always respond in the first person as the AI coach.
     message: llmResponse,
     type: responseType,
     relatedTasks,
-    tasksCreated
+    tasksCreated: tasksCreated || tasksModified
   };
 }
 
@@ -230,6 +284,114 @@ function determineResponseType(response: string, userMessage: string): ChatRespo
   }
   
   return 'general';
+}
+
+/**
+ * Detect if the user's message is about removing a task
+ */
+function detectRemoveTaskIntent(message: string): boolean {
+  const removeKeywords = [
+    'remove', 'delete', 'eliminate', 'get rid of', 'cancel', 
+    'drop', 'trash', 'erase', 'take off'
+  ];
+  
+  const lowercaseMessage = message.toLowerCase();
+  return removeKeywords.some(keyword => lowercaseMessage.includes(keyword)) && 
+         (lowercaseMessage.includes('task') || lowercaseMessage.includes('to-do'));
+}
+
+/**
+ * Detect if the user's message is about editing a task
+ */
+function detectEditTaskIntent(message: string): boolean {
+  const editKeywords = [
+    'edit', 'change', 'update', 'modify', 'alter', 'revise', 
+    'complete', 'finish', 'done', 'mark', 'rename', 'adjust'
+  ];
+  
+  const lowercaseMessage = message.toLowerCase();
+  return editKeywords.some(keyword => lowercaseMessage.includes(keyword)) && 
+         (lowercaseMessage.includes('task') || lowercaseMessage.includes('to-do'));
+}
+
+/**
+ * Find a task mentioned in the user's message
+ */
+function findTaskInMessage(message: string, tasks: any[]): any | undefined {
+  const lowercaseMessage = message.toLowerCase();
+  
+  // First try to find exact match by task title
+  for (const task of tasks) {
+    if (lowercaseMessage.includes(task.title.toLowerCase())) {
+      return task;
+    }
+  }
+  
+  // If no exact match, try to find by keywords or task number mention
+  // e.g., "the first task", "task 2", etc.
+  const taskNumberMatch = message.match(/task\s+(\d+)/i);
+  if (taskNumberMatch && taskNumberMatch[1]) {
+    const taskNumber = parseInt(taskNumberMatch[1]);
+    if (taskNumber > 0 && taskNumber <= tasks.length) {
+      return tasks[taskNumber - 1];
+    }
+  }
+  
+  // Look for "the first/second/third task" mentions
+  const ordinals = ['first', 'second', 'third', 'fourth', 'fifth', 'last'];
+  ordinals.forEach((ordinal, index) => {
+    if (lowercaseMessage.includes(`${ordinal} task`)) {
+      // Handle "last task" special case
+      if (ordinal === 'last') {
+        return tasks[tasks.length - 1];
+      }
+      // Otherwise return the corresponding task
+      if (index < tasks.length) {
+        return tasks[index];
+      }
+    }
+  });
+  
+  return undefined;
+}
+
+/**
+ * Extract a new task title from the user's message
+ */
+function extractNewTaskTitleFromMessage(message: string): string | null {
+  // Try to find "to X" pattern where X is the new task title
+  const toMatch = message.match(/to\s+["']([^"']+)["']/i) || 
+                 message.match(/to\s+([^,.!?]+)/i);
+  
+  if (toMatch && toMatch[1]) {
+    return toMatch[1].trim();
+  }
+  
+  // Try to find patterns like "rename task to X"
+  const renameMatch = message.match(/rename\s+(?:the\s+)?(?:task\s+)?to\s+["']([^"']+)["']/i) ||
+                     message.match(/rename\s+(?:the\s+)?(?:task\s+)?to\s+([^,.!?]+)/i);
+  
+  if (renameMatch && renameMatch[1]) {
+    return renameMatch[1].trim();
+  }
+  
+  return null;
+}
+
+/**
+ * Try to find a goal based on the user's message
+ */
+function findGoalFromMessage(message: string, goals: Goal[]): Goal | undefined {
+  const lowercaseMessage = message.toLowerCase();
+  
+  // Look for goals mentioned by title
+  for (const goal of goals) {
+    if (lowercaseMessage.includes(goal.title.toLowerCase())) {
+      return goal;
+    }
+  }
+  
+  return undefined;
 }
 
 /**
