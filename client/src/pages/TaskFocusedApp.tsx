@@ -182,13 +182,8 @@ const TaskFocusedApp: React.FC = () => {
         variant: "destructive"
       });
     },
-    onSuccess: (_, variables) => {
-      toast({
-        title: variables.completed ? "✅ Task completed!" : "⏪ Task reopened",
-        duration: 1000,
-        variant: "default",
-      });
-    }
+    // No toast notification or additional actions on success
+    onSuccess: () => {}
   });
   
   // Toggle subtask completion
@@ -232,7 +227,9 @@ const TaskFocusedApp: React.FC = () => {
     onError: () => {
       // On error, rollback by refetching fresh data
       queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
-    }
+    },
+    // No additional actions on success
+    onSuccess: () => {}
   });
   
   // Delete goal
