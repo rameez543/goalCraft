@@ -70,6 +70,15 @@ export default function TaskFocusedApp() {
     title: string;
   } | null>(null);
   
+  // Goal edit state
+  const [editGoalId, setEditGoalId] = useState<number | null>(null);
+  const [editGoalTitle, setEditGoalTitle] = useState("");
+  const [editGoalModalOpen, setEditGoalModalOpen] = useState(false);
+  
+  // Goal delete state
+  const [deleteGoalId, setDeleteGoalId] = useState<number | null>(null);
+  const [deleteGoalModalOpen, setDeleteGoalModalOpen] = useState(false);
+  
   // Conversation history for AI context retention
   const [conversationHistory, setConversationHistory] = useState<
     Array<{ role: 'user' | 'assistant'; content: string }>
@@ -243,6 +252,63 @@ export default function TaskFocusedApp() {
       toast({
         title: "Error",
         description: "Failed to create goal",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Edit goal mutation
+  const editGoal = useMutation({
+    mutationFn: async ({ id, title }: { id: number, title: string }) => {
+      return await apiRequest("PATCH", `/api/goals/${id}`, {
+        title
+      });
+    },
+    onSuccess: async () => {
+      setEditGoalTitle("");
+      setEditGoalId(null);
+      setEditGoalModalOpen(false);
+      
+      toast({
+        title: "Goal updated",
+        description: "Your goal has been updated",
+      });
+      
+      // Refresh goals data
+      await queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+    },
+    onError: (error) => {
+      console.error("Error updating goal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update goal",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Delete goal mutation
+  const deleteGoal = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest("DELETE", `/api/goals/${id}`);
+    },
+    onSuccess: async () => {
+      setDeleteGoalId(null);
+      setDeleteGoalModalOpen(false);
+      
+      toast({
+        title: "Goal deleted",
+        description: "Your goal has been removed",
+      });
+      
+      // Refresh goals data
+      await queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+    },
+    onError: (error) => {
+      console.error("Error deleting goal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete goal",
         variant: "destructive"
       });
     }
@@ -507,6 +573,33 @@ export default function TaskFocusedApp() {
                             }
                           </button>
                           <h3 className="text-lg font-medium">{goal.title}</h3>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-gray-500 hover:text-blue-600"
+                            onClick={() => {
+                              setEditGoalId(goal.id);
+                              setEditGoalTitle(goal.title);
+                              setEditGoalModalOpen(true);
+                            }}
+                          >
+                            <Edit className="h-3.5 w-3.5 mr-1" />
+                            <span className="text-xs">Edit</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-gray-500 hover:text-red-600"
+                            onClick={() => {
+                              setDeleteGoalId(goal.id);
+                              setDeleteGoalModalOpen(true);
+                            }}
+                          >
+                            <X className="h-3.5 w-3.5 mr-1" />
+                            <span className="text-xs">Remove</span>
+                          </Button>
                         </div>
                         <Badge 
                           variant={
@@ -793,6 +886,81 @@ export default function TaskFocusedApp() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Goal Modal */}
+      <Dialog open={editGoalModalOpen} onOpenChange={setEditGoalModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogTitle>Edit Goal</DialogTitle>
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (editGoalId && editGoalTitle.trim()) {
+                editGoal.mutate({ id: editGoalId, title: editGoalTitle.trim() });
+              }
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <Textarea 
+                value={editGoalTitle}
+                onChange={(e) => setEditGoalTitle(e.target.value)}
+                placeholder="Update your goal description..."
+                className="h-32"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={() => {
+                  setEditGoalModalOpen(false);
+                  setEditGoalId(null);
+                  setEditGoalTitle("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={!editGoalTitle.trim()}
+              >
+                Update Goal
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Goal Modal */}
+      <Dialog open={deleteGoalModalOpen} onOpenChange={setDeleteGoalModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogTitle>Delete Goal</DialogTitle>
+          <div className="py-4">
+            <p className="mb-4">Are you sure you want to delete this goal? This action cannot be undone and all associated tasks will be removed.</p>
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setDeleteGoalModalOpen(false);
+                  setDeleteGoalId(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={() => {
+                  if (deleteGoalId) {
+                    deleteGoal.mutate(deleteGoalId);
+                  }
+                }}
+              >
+                Delete Goal
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
       
