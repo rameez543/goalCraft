@@ -28,7 +28,7 @@ interface Message {
   goalId?: number;
 }
 
-const TaskFocusedApp: React.FC = () => {
+const TaskFocusedApp = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -609,7 +609,40 @@ const TaskFocusedApp: React.FC = () => {
                         {/* Tasks */}
                         {expandedGoals[goal.id] && (
                           <div className="px-4 pb-4 pt-1 space-y-2 border-t">
-                            {goal.tasks.map(task => (
+                            {/* Sort tasks by priority and completion status */}
+                            {[...goal.tasks]
+                              .sort((a, b) => {
+                                // First sort by completion status (incomplete first)
+                                if (a.completed !== b.completed) {
+                                  return a.completed ? 1 : -1;
+                                }
+                                
+                                // Then sort by complexity/priority if present
+                                const priorityOrder: Record<string, number> = { 
+                                  high: 1, 
+                                  medium: 2, 
+                                  low: 3 
+                                };
+                                const aPriority = a.complexity ? priorityOrder[a.complexity] : 4;
+                                const bPriority = b.complexity ? priorityOrder[b.complexity] : 4;
+                                
+                                if (aPriority !== bPriority) {
+                                  return aPriority - bPriority;
+                                }
+                                
+                                // Then sort by due date if present
+                                if (a.dueDate && b.dueDate) {
+                                  return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+                                } else if (a.dueDate) {
+                                  return -1; // a has due date, b doesn't
+                                } else if (b.dueDate) {
+                                  return 1;  // b has due date, a doesn't
+                                }
+                                
+                                // Default to alphabetical
+                                return a.title.localeCompare(b.title);
+                              })
+                              .map(task => (
                               <div 
                                 key={task.id}
                                 className={`p-3 flex items-start gap-3 rounded-md ${
