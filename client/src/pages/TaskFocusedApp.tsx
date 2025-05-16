@@ -46,6 +46,12 @@ const TaskFocusedApp: React.FC = () => {
   const [expandedGoals, setExpandedGoals] = useState<Record<number, boolean>>({});
   const [chatOpen, setChatOpen] = useState(false);
   const [newGoalMode, setNewGoalMode] = useState(false);
+  const [deleteGoalId, setDeleteGoalId] = useState<number | null>(null);
+  const [editingTask, setEditingTask] = useState<{
+    goalId: number;
+    taskId: string;
+    title: string;
+  } | null>(null);
   
   // Fetch user's goals
   const { data: goals = [], isLoading: isLoadingGoals } = useQuery<Goal[]>({
@@ -154,6 +160,56 @@ const TaskFocusedApp: React.FC = () => {
       toast({
         title: variables.completed ? "✅ Task completed!" : "⏪ Task reopened",
         duration: 1500,
+      });
+    }
+  });
+  
+  // Delete goal
+  const deleteGoal = useMutation({
+    mutationFn: async (goalId: number) => {
+      return await apiRequest("DELETE", `/api/goals/${goalId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+      toast({
+        title: "🗑️ Goal deleted",
+        description: "The goal and all its tasks have been removed",
+        duration: 3000,
+      });
+      setDeleteGoalId(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error deleting goal",
+        description: error instanceof Error ? error.message : "Something went wrong",
+        variant: "destructive"
+      });
+      setDeleteGoalId(null);
+    }
+  });
+  
+  // Edit task
+  const editTask = useMutation({
+    mutationFn: async ({ goalId, taskId, title }: { goalId: number, taskId: string, title: string }) => {
+      return await apiRequest("PATCH", "/api/tasks/edit", {
+        goalId,
+        taskId,
+        title
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+      toast({
+        title: "✏️ Task updated",
+        duration: 1500,
+      });
+      setEditingTask(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error updating task",
+        description: error instanceof Error ? error.message : "Something went wrong",
+        variant: "destructive"
       });
     }
   });
@@ -459,13 +515,26 @@ const TaskFocusedApp: React.FC = () => {
                             <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-200 border-0">
                               {goal.tasks.filter(t => !t.completed).length} remaining
                             </Badge>
-                            <Button variant="ghost" size="icon">
-                              {expandedGoals[goal.id] ? (
-                                <ChevronDown className="h-5 w-5 text-gray-500" />
-                              ) : (
-                                <ChevronRight className="h-5 w-5 text-gray-500" />
-                              )}
-                            </Button>
+                            <div className="flex items-center">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-7 w-7"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteGoalId(goal.id);
+                                }}
+                              >
+                                <X className="h-4 w-4 text-gray-500 hover:text-red-500" />
+                              </Button>
+                              <Button variant="ghost" size="icon">
+                                {expandedGoals[goal.id] ? (
+                                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                                ) : (
+                                  <ChevronRight className="h-5 w-5 text-gray-500" />
+                                )}
+                              </Button>
+                            </div>
                           </div>
                         </div>
                         
@@ -519,6 +588,53 @@ const TaskFocusedApp: React.FC = () => {
                                           {new Date(task.dueDate).toLocaleDateString()}
                                         </Badge>
                                       )}
+                                      
+                                      <div className="flex">
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon"
+                                          className="h-6 w-6"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditingTask({
+                                              goalId: goal.id,
+                                              taskId: task.id,
+                                              title: task.title
+                                            });
+                                          }}
+                                        >
+                                          <Edit className="h-3 w-3 text-gray-500" />
+                                        </Button>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon"
+                                          className="h-6 w-6"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            // Remove the task from the goal
+                                            const updatedTasks = goal.tasks.filter(t => t.id !== task.id);
+                                            
+                                            // Update the goal with the tasks excluding the removed one
+                                            apiRequest("PATCH", `/api/goals/${goal.id}`, {
+                                              tasks: updatedTasks
+                                            }).then(() => {
+                                              queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+                                              toast({
+                                                title: "🗑️ Task removed",
+                                                duration: 1500,
+                                              });
+                                            }).catch(error => {
+                                              toast({
+                                                title: "Error removing task",
+                                                description: error instanceof Error ? error.message : "Something went wrong",
+                                                variant: "destructive"
+                                              });
+                                            });
+                                          }}
+                                        >
+                                          <X className="h-3 w-3 text-gray-500" />
+                                        </Button>
+                                      </div>
                                     </div>
                                   </div>
                                   
@@ -635,6 +751,99 @@ const TaskFocusedApp: React.FC = () => {
         </div>
       </div>
       
+      {/* Delete Goal Confirmation */}
+      <Dialog open={deleteGoalId !== null} onOpenChange={(open) => !open && setDeleteGoalId(null)}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogTitle className="text-center">Confirm Deletion</DialogTitle>
+          <div className="py-3">
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to delete this goal? All tasks associated with this goal will also be deleted. This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setDeleteGoalId(null)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={() => deleteGoalId && deleteGoal.mutate(deleteGoalId)}
+                disabled={deleteGoal.isPending}
+              >
+                {deleteGoal.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete Goal'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Task Dialog */}
+      <Dialog open={editingTask !== null} onOpenChange={(open) => !open && setEditingTask(null)}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogTitle>Edit Task</DialogTitle>
+          <div className="py-3">
+            {editingTask && (
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (editingTask.title.trim() === "") return;
+                  
+                  editTask.mutate({
+                    goalId: editingTask.goalId,
+                    taskId: editingTask.taskId,
+                    title: editingTask.title
+                  });
+                }}
+              >
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Input 
+                      value={editingTask.title}
+                      onChange={(e) => setEditingTask({
+                        ...editingTask,
+                        title: e.target.value
+                      })}
+                      placeholder="Task title"
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      onClick={() => setEditingTask(null)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit"
+                      disabled={!editingTask.title.trim() || editTask.isPending}
+                    >
+                      {editTask.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        'Save Changes'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+        
       {/* Chat dialog */}
       <Dialog open={chatOpen} onOpenChange={setChatOpen}>
         <DialogContent className="sm:max-w-[500px] p-0 gap-0 max-h-[80vh] flex flex-col">
