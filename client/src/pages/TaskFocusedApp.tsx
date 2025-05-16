@@ -87,10 +87,16 @@ const TaskFocusedApp = () => {
   }, [messages]);
   
   // Send message mutation
+  // Store conversation history and send with each request
+  const [conversationHistory, setConversationHistory] = useState<
+    Array<{ role: 'user' | 'assistant'; content: string }>
+  >([]);
+  
   const sendMessage = useMutation({
     mutationFn: async (content: string) => {
       return await apiRequest("POST", "/api/coach/chat", {
-        message: content
+        message: content,
+        conversationHistory: conversationHistory
       });
     },
     onMutate: (content) => {
@@ -102,6 +108,10 @@ const TaskFocusedApp = () => {
         timestamp: new Date()
       };
       setMessages(prev => [...prev, newMessage]);
+      
+      // Update conversation history for context retention
+      setConversationHistory(prev => [...prev, { role: 'user', content }]);
+      
       setInput("");
       setIsTyping(true);
     },
@@ -120,14 +130,19 @@ const TaskFocusedApp = () => {
           )?.id : undefined
         };
         
+        // Add to the UI messages
         setMessages(prev => [...prev, aiMessage]);
+        
+        // Update conversation history with AI response for context retention
+        setConversationHistory(prev => [...prev, { role: 'assistant', content: data.message }]);
         
         // If new tasks were created, refresh goals data without causing navigation
         if (data.tasksCreated) {
-          // Use refetchQueries instead of invalidateQueries to maintain tab position
+          // Invalidate and then refetch to ensure data is fresh
+          await queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
           queryClient.refetchQueries({ 
             queryKey: ['/api/goals'],
-            type: 'active'
+            type: 'all'
           });
           
           // Auto-expand the goal that was just created
