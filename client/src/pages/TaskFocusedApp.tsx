@@ -695,9 +695,9 @@ export default function TaskFocusedApp() {
             </TabsContent>
             
             {/* Goals View */}
-            <TabsContent value="goals" className="space-y-4">
+            <TabsContent value="goals" className="space-y-3 sm:space-y-4">
               {isLoadingGoals ? (
-                <div className="flex justify-center items-center p-8">
+                <div className="flex justify-center items-center p-4 sm:p-8">
                   <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
                 </div>
               ) : goals.length > 0 ? (
@@ -790,7 +790,7 @@ export default function TaskFocusedApp() {
                           .map(task => (
                             <div 
                               key={task.id}
-                              className={`p-3 ${task.completed ? "bg-gray-50" : ""}`}
+                              className={`p-2 sm:p-3 rounded-lg ${task.completed ? "bg-gray-50" : "bg-white/50"}`}
                             >
                               <div className="flex items-center gap-3">
                                 <button

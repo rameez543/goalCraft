@@ -116,3 +116,67 @@
   transform: translateY(-2px);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  /* Make touch targets larger and more accessible */
+  button, 
+  [role="button"] {
+    min-height: 40px;
+    min-width: 40px;
+  }
+  
+  /* Ensure text doesn't overflow on small screens */
+  .truncate-mobile {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  
+  /* Optimize spacing for mobile */
+  .mobile-spacing {
+    padding: 0.75rem;
+  }
+  
+  /* Increase checkbox size for better usability */
+  input[type="checkbox"] {
+    height: 20px !important;
+    width: 20px !important;
+  }
+  
+  /* Task completion checkboxes */
+  button[aria-label="Mark as complete"],
+  button[aria-label="Mark as incomplete"] {
+    height: 24px !important;
+    width: 24px !important;
+  }
+  
+  /* Priority emoji enhancements for better visibility */
+  .emoji-priority {
+    display: inline-flex;
+    font-size: 1.25rem;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  /* Add smooth touch feedback for interactive elements */
+  .touch-feedback:active {
+    opacity: 0.7;
+    transform: scale(0.97);
+    transition: transform 0.1s ease-in-out, opacity 0.1s ease-in-out;
+  }
+  
+  /* Font size adjustments for better readability */
+  .text-sm {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+  
+  /* Improve task list spacing */
+  .task-item {
+    margin-bottom: 0.5rem;
+    padding: 0.75rem;
+  }
+}
