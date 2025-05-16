@@ -72,6 +72,7 @@ export const goals = pgTable("goals", {
   notificationChannels: jsonb("notification_channels").$type<string[]>(), // Email, Slack, WhatsApp, etc.
   lastProgressUpdate: text("last_progress_update"), // Latest progress update from user
   roadblocks: text("roadblocks"), // Any blockers or challenges reported by user
+  complexity: text("complexity"), // Priority: high, medium, low
 });
 
 export const insertGoalSchema = createInsertSchema(goals).omit({
