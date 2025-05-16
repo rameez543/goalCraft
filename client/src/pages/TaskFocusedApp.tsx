@@ -267,6 +267,7 @@ const TaskFocusedApp = () => {
         title: 'Error',
         description: 'Failed to delete goal. Please try again.',
       });
+      setDeleteGoalId(null);
     },
     onSuccess: () => {
       // Just refetch data silently without navigation changes
@@ -279,14 +280,6 @@ const TaskFocusedApp = () => {
         title: "🗑️ Goal deleted",
         description: "The goal and all its tasks have been removed",
         duration: 3000,
-      });
-      setDeleteGoalId(null);
-    },
-    onError: (error) => {
-      toast({
-        title: "Error deleting goal",
-        description: error instanceof Error ? error.message : "Something went wrong",
-        variant: "destructive"
       });
       setDeleteGoalId(null);
     }

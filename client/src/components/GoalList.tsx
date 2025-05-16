@@ -26,7 +26,11 @@ export const GoalList: React.FC<GoalListProps> = ({ goals, onSelectGoal }) => {
       return response.json();
     },
     onSuccess: (newGoal) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+      // Use refetchQueries instead of invalidateQueries to avoid unwanted navigation
+      queryClient.refetchQueries({ 
+        queryKey: ['/api/goals'],
+        type: 'active' 
+      });
       onSelectGoal(newGoal.id);
       toast({
         title: "Goal created",
