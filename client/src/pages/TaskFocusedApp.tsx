@@ -316,16 +316,37 @@ export default function TaskFocusedApp() {
   });
   
   // Get priority emoji based on complexity
-  const getPriorityEmoji = (complexity: string | undefined) => {
+  const getPriorityEmoji = (complexity: string | undefined, completed: boolean = false) => {
+    // If the task is completed, show a different emoji
+    if (completed) {
+      return "✅";
+    }
+    
+    // Based on complexity level
     switch (complexity?.toLowerCase()) {
       case 'high':
-        return "😓";
+        return "🔥"; // Difficult/high priority
       case 'medium':
-        return "😐";
+        return "⚡"; // Medium difficulty
       case 'low':
-        return "😌";
+        return "🌱"; // Easy/low priority
       default:
-        return "📝";
+        return "📋"; // Default/unknown
+    }
+  };
+  
+  // Get emoji for goals
+  const getGoalEmoji = (progress: number | null) => {
+    if (progress === 100) {
+      return "🏆"; // Completed goal
+    } else if (progress && progress > 75) {
+      return "🚀"; // Almost there
+    } else if (progress && progress > 50) {
+      return "🔄"; // Good progress
+    } else if (progress && progress > 25) {
+      return "🌟"; // Started progress
+    } else {
+      return "🎯"; // New goal
     }
   };
   
@@ -432,7 +453,7 @@ export default function TaskFocusedApp() {
             <div className="flex justify-between items-center">
               <TabsList className="bg-white/80 backdrop-blur border shadow-sm rounded-full">
                 <TabsTrigger value="today" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-full">
-                  📌 Today
+                  ⚡ Today
                 </TabsTrigger>
                 <TabsTrigger value="goals" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-full">
                   🎯 My Goals
@@ -482,7 +503,7 @@ export default function TaskFocusedApp() {
                         
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-lg">{getPriorityEmoji(task.complexity)}</span>
+                            <span className="text-lg">{getPriorityEmoji(task.complexity, task.completed)}</span>
                             <h3 className={`text-md font-medium ${task.completed ? "line-through text-gray-400" : ""}`}>
                               {task.title}
                             </h3>
@@ -573,6 +594,7 @@ export default function TaskFocusedApp() {
                               <ChevronDown className="h-5 w-5" />
                             }
                           </button>
+                          <span className="mr-2 text-xl">{getGoalEmoji(goal.progress)}</span>
                           <h3 className="text-lg font-medium">{goal.title}</h3>
                         </div>
                         <div className="flex items-center gap-2">
@@ -660,7 +682,7 @@ export default function TaskFocusedApp() {
                                 
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-lg">{getPriorityEmoji(task.complexity)}</span>
+                                    <span className="text-lg">{getPriorityEmoji(task.complexity, task.completed)}</span>
                                     <span className={`${task.completed ? "line-through text-gray-400" : "font-medium"}`}>
                                       {task.title}
                                     </span>

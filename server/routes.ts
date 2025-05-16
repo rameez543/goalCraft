@@ -807,6 +807,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // API endpoint to analyze task difficulty
+  app.post("/api/tasks/analyze-difficulty", async (req: Request, res: Response) => {
+    try {
+      const { taskTitle, context } = req.body;
+      
+      if (!taskTitle) {
+        return res.status(400).json({ message: "Task title is required" });
+      }
+      
+      const { analyzeTaskDifficulty } = await import('./llm/task-difficulty');
+      const complexity = await analyzeTaskDifficulty(taskTitle, context);
+      
+      res.json({ complexity });
+    } catch (error) {
+      console.error("Error analyzing task difficulty:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to analyze task difficulty" 
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
