@@ -156,6 +156,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Update goal properties
+  app.patch("/api/goals/:id", async (req: Request, res: Response) => {
+    try {
+      const goalId = parseInt(req.params.id);
+      if (isNaN(goalId)) {
+        res.status(400).json({ message: "Invalid goal ID" });
+        return;
+      }
+      
+      const { complexity, tasks, ...otherUpdates } = req.body;
+      
+      const goal = await storage.getGoal(goalId);
+      if (!goal) {
+        res.status(404).json({ message: "Goal not found" });
+        return;
+      }
+      
+      const updates: any = { ...otherUpdates };
+      
+      // If complexity is provided, update it
+      if (complexity) {
+        updates.complexity = complexity;
+      }
+      
+      // If tasks are provided, update them
+      if (tasks) {
+        updates.tasks = tasks;
+      }
+      
+      const updatedGoal = await storage.updateGoal(goalId, updates);
+      
+      if (!updatedGoal) {
+        res.status(404).json({ message: "Failed to update goal" });
+        return;
+      }
+      
+      res.json(updatedGoal);
+    } catch (error) {
+      console.error("Error updating goal:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to update goal" 
+      });
+    }
+  });
 
   // Update task completion status
   app.patch("/api/tasks", async (req: Request, res: Response) => {
