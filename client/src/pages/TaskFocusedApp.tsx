@@ -56,6 +56,9 @@ export default function TaskFocusedApp() {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
+  // Goal collapse state
+  const [collapsedGoals, setCollapsedGoals] = useState<Record<number, boolean>>({});
+  
   // Modal state
   const [chatOpen, setChatOpen] = useState(false);
   const [goalDescription, setGoalDescription] = useState("");
@@ -132,6 +135,10 @@ export default function TaskFocusedApp() {
         // If new tasks were created, refresh goals data
         if (data.tasksCreated) {
           await queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+          queryClient.refetchQueries({ 
+            queryKey: ['/api/goals'],
+            type: 'all'
+          });
         }
       } catch (error) {
         console.error("Failed to parse response:", error);
@@ -486,15 +493,30 @@ export default function TaskFocusedApp() {
                   >
                     <div className="p-4 border-b bg-gray-50">
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-lg font-medium">{goal.title}</h3>
+                        <div className="flex items-center">
+                          <button 
+                            onClick={() => setCollapsedGoals(prev => ({
+                              ...prev, 
+                              [goal.id]: !prev[goal.id]
+                            }))}
+                            className="mr-2 text-gray-500 hover:text-purple-600 transition-colors"
+                          >
+                            {collapsedGoals[goal.id] ? 
+                              <ChevronRight className="h-5 w-5" /> : 
+                              <ChevronDown className="h-5 w-5" />
+                            }
+                          </button>
+                          <h3 className="text-lg font-medium">{goal.title}</h3>
+                        </div>
                         <Badge 
                           variant={
                             (goal.progress || 0) === 100 
-                              ? "success" 
+                              ? "default" 
                               : (goal.progress || 0) > 50 
                                 ? "default" 
                                 : "outline"
                           }
+                          className={(goal.progress || 0) === 100 ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}
                         >
                           {(goal.progress || 0).toFixed(0)}% Complete
                         </Badge>
@@ -505,104 +527,106 @@ export default function TaskFocusedApp() {
                       />
                     </div>
                     
-                    <div className="divide-y">
-                      {goal.tasks
-                        .sort((a, b) => {
-                          // Sort completed tasks to the bottom
-                          if (a.completed !== b.completed) {
-                            return a.completed ? 1 : -1;
-                          }
-                          
-                          // Then sort by priority
-                          const priorityOrder = { high: 0, medium: 1, low: 2 };
-                          return (
-                            (priorityOrder[a.complexity?.toLowerCase() as keyof typeof priorityOrder] || 3) -
-                            (priorityOrder[b.complexity?.toLowerCase() as keyof typeof priorityOrder] || 3)
-                          );
-                        })
-                        .map(task => (
-                          <div 
-                            key={task.id}
-                            className={`p-3 ${task.completed ? "bg-gray-50" : ""}`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <button
-                                onClick={() => toggleTaskCompletion.mutate({
-                                  goalId: goal.id,
-                                  taskId: task.id,
-                                  completed: !task.completed
-                                })}
-                                className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                  task.completed 
-                                    ? "bg-green-100 border-green-500 text-green-500" 
-                                    : "border-gray-300 hover:border-purple-400"
-                                }`}
-                              >
-                                {task.completed && <Check className="h-4 w-4" />}
-                              </button>
-                              
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-lg">{getPriorityEmoji(task.complexity)}</span>
-                                  <span className={`${task.completed ? "line-through text-gray-400" : "font-medium"}`}>
-                                    {task.title}
-                                  </span>
-                                </div>
-                                
-                                {task.estimatedMinutes && (
-                                  <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                                    <Clock className="h-3 w-3" />
-                                    <span>
-                                      {task.estimatedMinutes} min
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                              
-                              <TaskOptionsDropdown 
-                                goalId={goal.id} 
-                                taskId={task.id}
-                                onDiscuss={() => {
-                                  setSelectedTask({
+                    {!collapsedGoals[goal.id] && (
+                      <div className="divide-y">
+                        {goal.tasks
+                          .sort((a, b) => {
+                            // Sort completed tasks to the bottom
+                            if (a.completed !== b.completed) {
+                              return a.completed ? 1 : -1;
+                            }
+                            
+                            // Then sort by priority
+                            const priorityOrder = { high: 0, medium: 1, low: 2 };
+                            return (
+                              (priorityOrder[a.complexity?.toLowerCase() as keyof typeof priorityOrder] || 3) -
+                              (priorityOrder[b.complexity?.toLowerCase() as keyof typeof priorityOrder] || 3)
+                            );
+                          })
+                          .map(task => (
+                            <div 
+                              key={task.id}
+                              className={`p-3 ${task.completed ? "bg-gray-50" : ""}`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={() => toggleTaskCompletion.mutate({
                                     goalId: goal.id,
                                     taskId: task.id,
-                                    title: task.title
-                                  });
-                                  setTaskModalOpen(true);
-                                }}
-                              />
-                            </div>
-                            
-                            {/* Subtasks */}
-                            {task.subtasks && task.subtasks.length > 0 && !task.completed && (
-                              <div className="ml-9 mt-2 space-y-2">
-                                {task.subtasks.map(subtask => (
-                                  <div key={subtask.id} className="flex items-center gap-2">
-                                    <button
-                                      onClick={() => toggleSubtaskCompletion.mutate({
-                                        goalId: goal.id,
-                                        taskId: task.id,
-                                        subtaskId: subtask.id,
-                                        completed: !subtask.completed
-                                      })}
-                                      className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                        subtask.completed 
-                                          ? "bg-green-100 border-green-500 text-green-500" 
-                                          : "border-gray-300 hover:border-purple-400"
-                                      }`}
-                                    >
-                                      {subtask.completed && <Check className="h-3 w-3" />}
-                                    </button>
-                                    <span className={`text-sm ${subtask.completed ? "line-through text-gray-400" : ""}`}>
-                                      {subtask.title}
+                                    completed: !task.completed
+                                  })}
+                                  className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                    task.completed 
+                                      ? "bg-green-100 border-green-500 text-green-500" 
+                                      : "border-gray-300 hover:border-purple-400"
+                                  }`}
+                                >
+                                  {task.completed && <Check className="h-4 w-4" />}
+                                </button>
+                                
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg">{getPriorityEmoji(task.complexity)}</span>
+                                    <span className={`${task.completed ? "line-through text-gray-400" : "font-medium"}`}>
+                                      {task.title}
                                     </span>
                                   </div>
-                                ))}
+                                  
+                                  {task.estimatedMinutes && (
+                                    <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                                      <Clock className="h-3 w-3" />
+                                      <span>
+                                        {task.estimatedMinutes} min
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <TaskOptionsDropdown 
+                                  goalId={goal.id} 
+                                  taskId={task.id}
+                                  onDiscuss={() => {
+                                    setSelectedTask({
+                                      goalId: goal.id,
+                                      taskId: task.id,
+                                      title: task.title
+                                    });
+                                    setTaskModalOpen(true);
+                                  }}
+                                />
                               </div>
-                            )}
-                          </div>
-                        ))}
-                    </div>
+                              
+                              {/* Subtasks */}
+                              {task.subtasks && task.subtasks.length > 0 && !task.completed && (
+                                <div className="ml-9 mt-2 space-y-2">
+                                  {task.subtasks.map(subtask => (
+                                    <div key={subtask.id} className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => toggleSubtaskCompletion.mutate({
+                                          goalId: goal.id,
+                                          taskId: task.id,
+                                          subtaskId: subtask.id,
+                                          completed: !subtask.completed
+                                        })}
+                                        className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                          subtask.completed 
+                                            ? "bg-green-100 border-green-500 text-green-500" 
+                                            : "border-gray-300 hover:border-purple-400"
+                                        }`}
+                                      >
+                                        {subtask.completed && <Check className="h-3 w-3" />}
+                                      </button>
+                                      <span className={`text-sm ${subtask.completed ? "line-through text-gray-400" : ""}`}>
+                                        {subtask.title}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    )}
                   </div>
                 ))
               ) : (
