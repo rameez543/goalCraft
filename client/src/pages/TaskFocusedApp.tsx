@@ -472,13 +472,12 @@ export default function TaskFocusedApp() {
     }).format(date);
   };
   
-  // Calculate all tasks for today's view
+  // Calculate all tasks for today's view (including completed ones)
   const todaysTasks = goals.flatMap(goal => 
     goal.tasks
-      .filter(task => !task.completed)
       .map(task => ({ ...task, goalId: goal.id, goalTitle: goal.title }))
   ).sort((a, b) => {
-    // Sort by priority
+    // Sort only by priority, keeping completed tasks in place
     const priorityOrder = { high: 0, medium: 1, low: 2 };
     return (
       (priorityOrder[a.complexity?.toLowerCase() as keyof typeof priorityOrder] || 3) -
@@ -775,12 +774,7 @@ export default function TaskFocusedApp() {
                       <div className="divide-y">
                         {goal.tasks
                           .sort((a, b) => {
-                            // Sort completed tasks to the bottom
-                            if (a.completed !== b.completed) {
-                              return a.completed ? 1 : -1;
-                            }
-                            
-                            // Then sort by priority
+                            // Sort only by priority, keeping completed tasks in place
                             const priorityOrder = { high: 0, medium: 1, low: 2 };
                             return (
                               (priorityOrder[a.complexity?.toLowerCase() as keyof typeof priorityOrder] || 3) -
