@@ -511,23 +511,38 @@ export default function TaskFocusedApp() {
   return (
     <div className="flex flex-col h-full min-h-screen bg-gradient-to-br from-gray-50 to-slate-100">
       {/* Header/Nav */}
-      <header className="bg-white/95 backdrop-blur shadow-sm border-b py-3 px-6 sticky top-0 z-10">
+      <header className="bg-white/95 backdrop-blur shadow-sm border-b py-3 px-4 sm:px-6 sticky top-0 z-10">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Star className="h-6 w-6 text-purple-500" />
             <h1 className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">TaskBreaker</h1>
           </div>
           
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setChatOpen(true)}
-              className="flex items-center gap-1"
-            >
-              <MessageCircle className="h-4 w-4" />
-              <span>AI Coach</span>
-            </Button>
+          <div className="flex items-center gap-1 sm:gap-2">
+            {/* Mobile menu button for small screens */}
+            <div className="md:hidden">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setChatOpen(true)}
+                className="mr-1"
+              >
+                <MessageCircle className="h-5 w-5" />
+              </Button>
+            </div>
+            
+            {/* Desktop buttons for larger screens */}
+            <div className="hidden md:block">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setChatOpen(true)}
+                className="flex items-center gap-1"
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span>AI Coach</span>
+              </Button>
+            </div>
             
             <Button
               variant="ghost"
@@ -536,7 +551,7 @@ export default function TaskFocusedApp() {
               className="flex items-center gap-1"
             >
               <Plus className="h-4 w-4" />
-              <span>New Goal</span>
+              <span className="hidden sm:inline">New Goal</span>
             </Button>
             
             <DropdownMenu>
