@@ -306,7 +306,11 @@ const TaskFocusedApp = () => {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+      // Use refetchQueries instead of invalidateQueries to prevent unwanted navigation
+      queryClient.refetchQueries({ 
+        queryKey: ['/api/goals'],
+        type: 'active' 
+      });
       toast({
         title: "✏️ Task updated",
         duration: 1500,

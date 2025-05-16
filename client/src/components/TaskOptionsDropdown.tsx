@@ -38,7 +38,11 @@ const TaskOptionsDropdown: React.FC<TaskOptionsDropdownProps> = ({
     apiRequest("PATCH", `/api/goals/${goalId}`, {
       tasks: updatedTasks
     }).then(() => {
-      queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+      // Use refetchQueries instead of invalidateQueries to prevent unwanted navigation
+      queryClient.refetchQueries({ 
+        queryKey: ['/api/goals'],
+        type: 'active' 
+      });
     }).catch(error => {
       console.error("Error updating task:", error);
       toast({
@@ -57,7 +61,11 @@ const TaskOptionsDropdown: React.FC<TaskOptionsDropdownProps> = ({
     apiRequest("PATCH", `/api/goals/${goalId}`, {
       tasks: updatedTasks
     }).then(() => {
-      queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+      // Use refetchQueries instead of invalidateQueries to prevent unwanted navigation
+      queryClient.refetchQueries({ 
+        queryKey: ['/api/goals'],
+        type: 'active' 
+      });
       toast({
         title: "🗑️ Task removed",
         duration: 1500,
