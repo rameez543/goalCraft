@@ -116,9 +116,13 @@ const TaskFocusedApp = () => {
         
         setMessages(prev => [...prev, aiMessage]);
         
-        // If new tasks were created, refresh goals data
+        // If new tasks were created, refresh goals data without causing navigation
         if (data.tasksCreated) {
-          queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+          // Use refetchQueries instead of invalidateQueries to maintain tab position
+          queryClient.refetchQueries({ 
+            queryKey: ['/api/goals'],
+            type: 'active'
+          });
           
           // Auto-expand the goal that was just created
           if (aiMessage.goalId !== undefined) {
