@@ -602,16 +602,16 @@ export default function TaskFocusedApp() {
             
             {/* Today's Tasks */}
             <TabsContent value="today" className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 gap-3 sm:gap-4">
                 {isLoadingGoals ? (
-                  <div className="flex justify-center items-center p-8">
+                  <div className="flex justify-center items-center p-4 sm:p-8">
                     <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
                   </div>
                 ) : todaysTasks.length > 0 ? (
                   todaysTasks.map(task => (
                     <div
                       key={`${task.goalId}-${task.id}`}
-                      className="bg-white/90 backdrop-blur rounded-xl shadow-sm border p-4 transition-all hover:shadow-md hover:translate-y-[-2px]"
+                      className="bg-white/90 backdrop-blur rounded-xl shadow-sm border p-3 sm:p-4 transition-all hover:shadow-md hover:translate-y-[-2px]"
                     >
                       <div className="flex items-center gap-3 mb-2">
                         <button
