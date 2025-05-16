@@ -90,12 +90,8 @@ Always respond in the first person as the AI coach.
   // Generate AI response using the selected model
   const llmResponse = await generateCompletion({
     model: getModel(),
-    messages: [
-      { role: 'system', content: systemPrompt },
-      ...conversationHistory
-    ],
-    temperature: 0.7,
-    max_tokens: 500
+    systemPrompt,
+    userPrompt: conversationHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n')
   });
 
   // Add assistant response to history for future context
@@ -126,7 +122,10 @@ Always respond in the first person as the AI coach.
             id: nanoid(),
             title: taskTitle,
             completed: false,
-            subtasks: []
+            subtasks: [],
+            addedToCalendar: false,
+            reminderEnabled: false,
+            enableWhatsapp: false
           })),
           userId: String(input.userId),
           createdAt: new Date().toISOString(),
@@ -146,7 +145,10 @@ Always respond in the first person as the AI coach.
             id: nanoid(),
             title: taskTitle,
             completed: false,
-            subtasks: []
+            subtasks: [],
+            addedToCalendar: false,
+            reminderEnabled: false,
+            enableWhatsapp: false
           }))
         ];
         
@@ -246,5 +248,5 @@ function extractTasksFromResponse(response: string): string[] {
   }
   
   // Deduplicate tasks
-  return [...new Set(tasks)];
+  return Array.from(new Set(tasks));
 }

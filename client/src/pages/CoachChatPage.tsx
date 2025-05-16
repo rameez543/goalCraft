@@ -111,7 +111,7 @@ const CoachChatPage: React.FC = () => {
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : (
-                <GoalList goals={goals || []} onSelectGoal={(goalId) => {
+                <GoalList goals={goals || []} onSelectGoal={(goalId: number) => {
                   setSelectedGoalId(goalId);
                   document.querySelector('[data-value="chat"]')?.dispatchEvent(
                     new MouseEvent('click', { bubbles: true })
