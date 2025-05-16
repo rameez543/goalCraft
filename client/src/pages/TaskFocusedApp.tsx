@@ -775,6 +775,18 @@ export default function TaskFocusedApp() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="h-7 px-2 text-gray-500 hover:text-green-600"
+                            onClick={() => {
+                              setAddTaskGoalId(goal.id);
+                              setAddTaskModalOpen(true);
+                            }}
+                          >
+                            <Plus className="h-3.5 w-3.5 mr-1" />
+                            <span className="text-xs">Add Task</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             className="h-7 px-2 text-gray-500 hover:text-blue-600"
                             onClick={() => {
                               setEditGoalId(goal.id);
