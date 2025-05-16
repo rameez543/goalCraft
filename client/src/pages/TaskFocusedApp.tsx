@@ -10,6 +10,7 @@ import {
   Clock, Edit, Loader2, MessageCircle, MoreHorizontal, Plus, 
   Send, Star, X 
 } from "lucide-react";
+import TaskOptionsDropdown from "@/components/TaskOptionsDropdown";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -699,17 +700,105 @@ const TaskFocusedApp = () => {
                                           </Badge>
                                         )}
                                         
-                                        {task.complexity && (
-                                          <Badge className={`text-xs ${
-                                            task.completed ? 'bg-gray-100 text-gray-500' :
-                                            task.complexity === 'high' ? 'bg-red-100 text-red-700' :
-                                            task.complexity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                                            'bg-green-100 text-green-700'
-                                          }`}>
-                                            {task.complexity === 'high' ? '😓 Hard' : 
-                                             task.complexity === 'medium' ? '😐 Medium' : '😌 Easy'}
-                                          </Badge>
-                                        )}
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Badge className={`text-xs cursor-pointer ${
+                                              task.completed ? 'bg-gray-100 text-gray-500' :
+                                              task.complexity === 'high' ? 'bg-red-100 text-red-700' :
+                                              task.complexity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                              task.complexity ? 'bg-green-100 text-green-700' :
+                                              'bg-blue-100 text-blue-700'
+                                            }`}>
+                                              {task.complexity === 'high' ? '😓 Hard' : 
+                                               task.complexity === 'medium' ? '😐 Medium' : 
+                                               task.complexity === 'low' ? '😌 Easy' :
+                                               '📋 Set Priority'}
+                                            </Badge>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="start">
+                                            <DropdownMenuLabel>Set Priority</DropdownMenuLabel>
+                                            <DropdownMenuItem
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const updatedTasks = goal.tasks.map(t => {
+                                                  if (t.id === task.id) {
+                                                    return { ...t, complexity: 'high' };
+                                                  }
+                                                  return t;
+                                                });
+                                                
+                                                apiRequest("PATCH", `/api/goals/${goal.id}`, {
+                                                  tasks: updatedTasks
+                                                }).then(() => {
+                                                  queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+                                                }).catch(error => {
+                                                  console.error("Error updating task:", error);
+                                                  toast({
+                                                    title: "Error updating task",
+                                                    description: error.message,
+                                                    variant: "destructive",
+                                                  });
+                                                });
+                                              }}
+                                            >
+                                              <span className="text-red-500 mr-2">😓</span> High Priority
+                                            </DropdownMenuItem>
+                                            
+                                            <DropdownMenuItem
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const updatedTasks = goal.tasks.map(t => {
+                                                  if (t.id === task.id) {
+                                                    return { ...t, complexity: 'medium' };
+                                                  }
+                                                  return t;
+                                                });
+                                                
+                                                apiRequest("PATCH", `/api/goals/${goal.id}`, {
+                                                  tasks: updatedTasks
+                                                }).then(() => {
+                                                  queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+                                                }).catch(error => {
+                                                  console.error("Error updating task:", error);
+                                                  toast({
+                                                    title: "Error updating task",
+                                                    description: error.message,
+                                                    variant: "destructive",
+                                                  });
+                                                });
+                                              }}
+                                            >
+                                              <span className="text-yellow-500 mr-2">😐</span> Medium Priority
+                                            </DropdownMenuItem>
+                                            
+                                            <DropdownMenuItem
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const updatedTasks = goal.tasks.map(t => {
+                                                  if (t.id === task.id) {
+                                                    return { ...t, complexity: 'low' };
+                                                  }
+                                                  return t;
+                                                });
+                                                
+                                                apiRequest("PATCH", `/api/goals/${goal.id}`, {
+                                                  tasks: updatedTasks
+                                                }).then(() => {
+                                                  queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+                                                }).catch(error => {
+                                                  console.error("Error updating task:", error);
+                                                  toast({
+                                                    title: "Error updating task",
+                                                    description: error.message,
+                                                    variant: "destructive",
+                                                  });
+                                                });
+                                              }}
+                                            >
+                                              <span className="text-green-500 mr-2">😌</span> Low Priority
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
                                         
                                         {task.estimatedMinutes && (
                                           <Badge variant="outline" className={`text-xs gap-1 ${
