@@ -164,6 +164,26 @@ const TaskFocusedApp: React.FC = () => {
     }
   });
   
+  // Toggle subtask completion
+  const toggleSubtaskCompletion = useMutation({
+    mutationFn: async ({ goalId, taskId, subtaskId, completed }: { 
+      goalId: number, 
+      taskId: string, 
+      subtaskId: string, 
+      completed: boolean 
+    }) => {
+      return await apiRequest("PATCH", "/api/subtasks", {
+        goalId,
+        taskId,
+        subtaskId,
+        completed
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+    }
+  });
+  
   // Delete goal
   const deleteGoal = useMutation({
     mutationFn: async (goalId: number) => {
@@ -642,11 +662,21 @@ const TaskFocusedApp: React.FC = () => {
                                     <div className="mt-2 space-y-1">
                                       {task.subtasks.map(subtask => (
                                         <div key={subtask.id} className="flex items-center gap-2">
-                                          <div className="w-3.5 h-3.5 border border-gray-300 rounded-sm flex items-center justify-center">
+                                          <button 
+                                            className="w-3.5 h-3.5 border border-gray-300 rounded-sm flex items-center justify-center"
+                                            onClick={() => {
+                                              toggleSubtaskCompletion.mutate({
+                                                goalId: goal.id,
+                                                taskId: task.id,
+                                                subtaskId: subtask.id,
+                                                completed: !subtask.completed
+                                              });
+                                            }}
+                                          >
                                             {subtask.completed && (
                                               <Check className="h-2.5 w-2.5 text-purple-600" />
                                             )}
-                                          </div>
+                                          </button>
                                           <span className={`text-xs ${subtask.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
                                             {subtask.title}
                                           </span>
