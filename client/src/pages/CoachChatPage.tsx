@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ListTodo, MessageCircle, Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { GoalList } from "@/components/GoalList";
+import { GoalList } from "@/components/CoachGoalList";
 import { Goal } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
