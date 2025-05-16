@@ -626,14 +626,14 @@ const TaskFocusedApp = () => {
                                   return a.completed ? 1 : -1;
                                 }
                                 
-                                // Then sort by complexity/priority if present
+                                // Then sort by complexity/priority if present (high priority first)
                                 const priorityOrder: Record<string, number> = { 
-                                  high: 1, 
-                                  medium: 2, 
-                                  low: 3 
+                                  high: 0, // Changed to 0 to make high priority appear first
+                                  medium: 1, 
+                                  low: 2 
                                 };
-                                const aPriority = a.complexity ? priorityOrder[a.complexity] : 4;
-                                const bPriority = b.complexity ? priorityOrder[b.complexity] : 4;
+                                const aPriority = a.complexity ? priorityOrder[a.complexity] : 3;
+                                const bPriority = b.complexity ? priorityOrder[b.complexity] : 3;
                                 
                                 if (aPriority !== bPriority) {
                                   return aPriority - bPriority;
@@ -689,16 +689,197 @@ const TaskFocusedApp = () => {
                                     
                                     <div className="flex items-center gap-1">
                                       <div className="flex gap-1">
-                                        {task.dueDate && (
-                                          <Badge variant="outline" className={`text-xs gap-1 ${
-                                            task.completed 
-                                              ? 'border-gray-200 bg-gray-50 text-gray-400' 
-                                              : 'border-orange-200 bg-orange-50 text-orange-700'
-                                          }`}>
-                                            <Calendar className="h-3 w-3" />
-                                            {new Date(task.dueDate).toLocaleDateString()}
-                                          </Badge>
-                                        )}
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Badge variant="outline" className={`text-xs gap-1 cursor-pointer ${
+                                              task.completed 
+                                                ? 'border-gray-200 bg-gray-50 text-gray-400' 
+                                                : 'border-orange-200 bg-orange-50 text-orange-700'
+                                            }`}>
+                                              <Calendar className="h-3 w-3" />
+                                              {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Set due date'}
+                                            </Badge>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="start">
+                                            <DropdownMenuLabel>Set Due Date</DropdownMenuLabel>
+                                            
+                                            {/* Today */}
+                                            <DropdownMenuItem
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const today = new Date();
+                                                today.setHours(23, 59, 59, 999);
+                                                
+                                                const updatedTasks = goal.tasks.map(t => {
+                                                  if (t.id === task.id) {
+                                                    return { ...t, dueDate: today.toISOString() };
+                                                  }
+                                                  return t;
+                                                });
+                                                
+                                                apiRequest("PATCH", `/api/goals/${goal.id}`, {
+                                                  tasks: updatedTasks
+                                                }).then(() => {
+                                                  queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+                                                }).catch(error => {
+                                                  console.error("Error updating task:", error);
+                                                  toast({
+                                                    title: "Error updating task",
+                                                    description: error.message,
+                                                    variant: "destructive",
+                                                  });
+                                                });
+                                              }}
+                                            >
+                                              <Calendar className="h-4 w-4 mr-2" /> Today
+                                            </DropdownMenuItem>
+                                            
+                                            {/* Tomorrow */}
+                                            <DropdownMenuItem
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const tomorrow = new Date();
+                                                tomorrow.setDate(tomorrow.getDate() + 1);
+                                                tomorrow.setHours(23, 59, 59, 999);
+                                                
+                                                const updatedTasks = goal.tasks.map(t => {
+                                                  if (t.id === task.id) {
+                                                    return { ...t, dueDate: tomorrow.toISOString() };
+                                                  }
+                                                  return t;
+                                                });
+                                                
+                                                apiRequest("PATCH", `/api/goals/${goal.id}`, {
+                                                  tasks: updatedTasks
+                                                }).then(() => {
+                                                  queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+                                                }).catch(error => {
+                                                  console.error("Error updating task:", error);
+                                                  toast({
+                                                    title: "Error updating task",
+                                                    description: error.message,
+                                                    variant: "destructive",
+                                                  });
+                                                });
+                                              }}
+                                            >
+                                              <Calendar className="h-4 w-4 mr-2" /> Tomorrow
+                                            </DropdownMenuItem>
+                                            
+                                            {/* Next week */}
+                                            <DropdownMenuItem
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const nextWeek = new Date();
+                                                nextWeek.setDate(nextWeek.getDate() + 7);
+                                                nextWeek.setHours(23, 59, 59, 999);
+                                                
+                                                const updatedTasks = goal.tasks.map(t => {
+                                                  if (t.id === task.id) {
+                                                    return { ...t, dueDate: nextWeek.toISOString() };
+                                                  }
+                                                  return t;
+                                                });
+                                                
+                                                apiRequest("PATCH", `/api/goals/${goal.id}`, {
+                                                  tasks: updatedTasks
+                                                }).then(() => {
+                                                  queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+                                                }).catch(error => {
+                                                  console.error("Error updating task:", error);
+                                                  toast({
+                                                    title: "Error updating task",
+                                                    description: error.message,
+                                                    variant: "destructive",
+                                                  });
+                                                });
+                                              }}
+                                            >
+                                              <Calendar className="h-4 w-4 mr-2" /> Next week
+                                            </DropdownMenuItem>
+                                            
+                                            {/* Custom date */}
+                                            <DropdownMenuItem
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const dateStr = prompt("Enter date (YYYY-MM-DD):");
+                                                if (dateStr) {
+                                                  try {
+                                                    const customDate = new Date(dateStr);
+                                                    if (!isNaN(customDate.getTime())) {
+                                                      customDate.setHours(23, 59, 59, 999);
+                                                      
+                                                      const updatedTasks = goal.tasks.map(t => {
+                                                        if (t.id === task.id) {
+                                                          return { ...t, dueDate: customDate.toISOString() };
+                                                        }
+                                                        return t;
+                                                      });
+                                                      
+                                                      apiRequest("PATCH", `/api/goals/${goal.id}`, {
+                                                        tasks: updatedTasks
+                                                      }).then(() => {
+                                                        queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+                                                      }).catch(error => {
+                                                        console.error("Error updating task:", error);
+                                                        toast({
+                                                          title: "Error updating task",
+                                                          description: error.message,
+                                                          variant: "destructive",
+                                                        });
+                                                      });
+                                                    } else {
+                                                      toast({
+                                                        title: "Invalid date format",
+                                                        description: "Please use YYYY-MM-DD format",
+                                                        variant: "destructive",
+                                                      });
+                                                    }
+                                                  } catch (error) {
+                                                    toast({
+                                                      title: "Invalid date format",
+                                                      description: "Please use YYYY-MM-DD format",
+                                                      variant: "destructive",
+                                                    });
+                                                  }
+                                                }
+                                              }}
+                                            >
+                                              <Calendar className="h-4 w-4 mr-2" /> Custom date...
+                                            </DropdownMenuItem>
+                                            
+                                            {/* Clear due date */}
+                                            {task.dueDate && (
+                                              <DropdownMenuItem
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  const updatedTasks = goal.tasks.map(t => {
+                                                    if (t.id === task.id) {
+                                                      const { dueDate, ...rest } = t;
+                                                      return rest;
+                                                    }
+                                                    return t;
+                                                  });
+                                                  
+                                                  apiRequest("PATCH", `/api/goals/${goal.id}`, {
+                                                    tasks: updatedTasks
+                                                  }).then(() => {
+                                                    queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+                                                  }).catch(error => {
+                                                    console.error("Error updating task:", error);
+                                                    toast({
+                                                      title: "Error updating task",
+                                                      description: error.message,
+                                                      variant: "destructive",
+                                                    });
+                                                  });
+                                                }}
+                                              >
+                                                <X className="h-4 w-4 mr-2" /> Clear due date
+                                              </DropdownMenuItem>
+                                            )}
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
                                         
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
@@ -800,16 +981,84 @@ const TaskFocusedApp = () => {
                                           </DropdownMenuContent>
                                         </DropdownMenu>
                                         
-                                        {task.estimatedMinutes && (
-                                          <Badge variant="outline" className={`text-xs gap-1 ${
-                                            task.completed 
-                                              ? 'border-gray-200 bg-gray-50 text-gray-400' 
-                                              : 'border-blue-200 bg-blue-50 text-blue-700'
-                                          }`}>
-                                            <Clock className="h-3 w-3" />
-                                            {task.estimatedMinutes} min
-                                          </Badge>
-                                        )}
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Badge variant="outline" className={`text-xs gap-1 cursor-pointer ${
+                                              task.completed 
+                                                ? 'border-gray-200 bg-gray-50 text-gray-400' 
+                                                : 'border-blue-200 bg-blue-50 text-blue-700'
+                                            }`}>
+                                              <Clock className="h-3 w-3" />
+                                              {task.estimatedMinutes ? `${task.estimatedMinutes} min` : 'Set time'}
+                                            </Badge>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="start">
+                                            <DropdownMenuLabel>Set Time Estimate</DropdownMenuLabel>
+                                            
+                                            {[15, 30, 45, 60, 90, 120].map(minutes => (
+                                              <DropdownMenuItem
+                                                key={minutes}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  const updatedTasks = goal.tasks.map(t => {
+                                                    if (t.id === task.id) {
+                                                      return { ...t, estimatedMinutes: minutes };
+                                                    }
+                                                    return t;
+                                                  });
+                                                  
+                                                  apiRequest("PATCH", `/api/goals/${goal.id}`, {
+                                                    tasks: updatedTasks
+                                                  }).then(() => {
+                                                    queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+                                                  }).catch(error => {
+                                                    console.error("Error updating task:", error);
+                                                    toast({
+                                                      title: "Error updating task",
+                                                      description: error.message,
+                                                      variant: "destructive",
+                                                    });
+                                                  });
+                                                }}
+                                              >
+                                                <Clock className="h-4 w-4 mr-2" /> {minutes} minutes
+                                              </DropdownMenuItem>
+                                            ))}
+                                            
+                                            <DropdownMenuItem
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const customTime = prompt("Enter time in minutes:");
+                                                if (customTime) {
+                                                  const minutes = parseInt(customTime);
+                                                  if (!isNaN(minutes) && minutes > 0) {
+                                                    const updatedTasks = goal.tasks.map(t => {
+                                                      if (t.id === task.id) {
+                                                        return { ...t, estimatedMinutes: minutes };
+                                                      }
+                                                      return t;
+                                                    });
+                                                    
+                                                    apiRequest("PATCH", `/api/goals/${goal.id}`, {
+                                                      tasks: updatedTasks
+                                                    }).then(() => {
+                                                      queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+                                                    }).catch(error => {
+                                                      console.error("Error updating task:", error);
+                                                      toast({
+                                                        title: "Error updating task",
+                                                        description: error.message,
+                                                        variant: "destructive",
+                                                      });
+                                                    });
+                                                  }
+                                                }
+                                              }}
+                                            >
+                                              <Clock className="h-4 w-4 mr-2" /> Custom time...
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
                                       </div>
                                       
                                       <div className="flex">
