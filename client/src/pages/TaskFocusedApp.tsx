@@ -646,16 +646,41 @@ const TaskFocusedApp: React.FC = () => {
                                     </h4>
                                     
                                     <div className="flex items-center gap-1">
-                                      {task.dueDate && (
-                                        <Badge variant="outline" className={`text-xs gap-1 ${
-                                          task.completed 
-                                            ? 'border-gray-200 bg-gray-50 text-gray-400' 
-                                            : 'border-orange-200 bg-orange-50 text-orange-700'
-                                        }`}>
-                                          <Calendar className="h-3 w-3" />
-                                          {new Date(task.dueDate).toLocaleDateString()}
-                                        </Badge>
-                                      )}
+                                      <div className="flex gap-1">
+                                        {task.dueDate && (
+                                          <Badge variant="outline" className={`text-xs gap-1 ${
+                                            task.completed 
+                                              ? 'border-gray-200 bg-gray-50 text-gray-400' 
+                                              : 'border-orange-200 bg-orange-50 text-orange-700'
+                                          }`}>
+                                            <Calendar className="h-3 w-3" />
+                                            {new Date(task.dueDate).toLocaleDateString()}
+                                          </Badge>
+                                        )}
+                                        
+                                        {task.complexity && (
+                                          <Badge className={`text-xs ${
+                                            task.completed ? 'bg-gray-100 text-gray-500' :
+                                            task.complexity === 'high' ? 'bg-red-100 text-red-700' :
+                                            task.complexity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                            'bg-green-100 text-green-700'
+                                          }`}>
+                                            {task.complexity === 'high' ? '😓 Hard' : 
+                                             task.complexity === 'medium' ? '😐 Medium' : '😌 Easy'}
+                                          </Badge>
+                                        )}
+                                        
+                                        {task.estimatedMinutes && (
+                                          <Badge variant="outline" className={`text-xs gap-1 ${
+                                            task.completed 
+                                              ? 'border-gray-200 bg-gray-50 text-gray-400' 
+                                              : 'border-blue-200 bg-blue-50 text-blue-700'
+                                          }`}>
+                                            <Clock className="h-3 w-3" />
+                                            {task.estimatedMinutes} min
+                                          </Badge>
+                                        )}
+                                      </div>
                                       
                                       <div className="flex">
                                         <Button 
