@@ -382,16 +382,26 @@ export default function TaskFocusedApp() {
       // Create a unique ID for the new task
       const taskId = `task-${Date.now()}`;
       
+      // Get the current goal first to preserve existing tasks
+      const goal = goals.find(g => g.id === goalId);
+      if (!goal) {
+        throw new Error("Goal not found");
+      }
+      
+      // Create a copy of existing tasks and add the new one
+      const updatedTasks = [
+        ...goal.tasks,
+        {
+          id: taskId,
+          title,
+          complexity,
+          completed: false,
+          subtasks: []
+        }
+      ];
+      
       return await apiRequest("PATCH", `/api/goals/${goalId}`, {
-        tasks: [
-          {
-            id: taskId,
-            title,
-            complexity,
-            completed: false,
-            subtasks: []
-          }
-        ]
+        tasks: updatedTasks
       });
     },
     onSuccess: async () => {
@@ -1317,9 +1327,16 @@ export default function TaskFocusedApp() {
                   });
                 }
               }}
-              disabled={!addTaskTitle.trim() || !addTaskGoalId}
+              disabled={!addTaskTitle.trim() || !addTaskGoalId || addTask.isPending}
             >
-              Add Task
+              {addTask.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                "Add Task"
+              )}
             </Button>
           </div>
         </DialogContent>
