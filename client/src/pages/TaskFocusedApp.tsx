@@ -149,17 +149,44 @@ const TaskFocusedApp: React.FC = () => {
   // Toggle task completion
   const toggleTaskCompletion = useMutation({
     mutationFn: async ({ goalId, taskId, completed }: { goalId: number, taskId: string, completed: boolean }) => {
+      // Optimistic update
+      const previousGoals = queryClient.getQueryData<Goal[]>(['/api/goals']) || [];
+      
+      // Create a deep copy of the goals to modify
+      const optimisticGoals = JSON.parse(JSON.stringify(previousGoals));
+      
+      // Update the task completion status in our optimistic data
+      const goalIndex = optimisticGoals.findIndex((g: Goal) => g.id === goalId);
+      if (goalIndex !== -1) {
+        const taskIndex = optimisticGoals[goalIndex].tasks.findIndex((t: any) => t.id === taskId);
+        if (taskIndex !== -1) {
+          optimisticGoals[goalIndex].tasks[taskIndex].completed = completed;
+        }
+      }
+      
+      // Set the optimistic data immediately
+      queryClient.setQueryData(['/api/goals'], optimisticGoals);
+      
       return await apiRequest("PATCH", "/api/tasks", {
         goalId,
         taskId,
         completed
       });
     },
-    onSuccess: (_, variables) => {
+    onError: (error, variables) => {
+      // On error, rollback by refetching fresh data
       queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
       toast({
+        title: "Error updating task",
+        description: error instanceof Error ? error.message : "Something went wrong",
+        variant: "destructive"
+      });
+    },
+    onSuccess: (_, variables) => {
+      toast({
         title: variables.completed ? "✅ Task completed!" : "⏪ Task reopened",
-        duration: 1500,
+        duration: 1000,
+        variant: "default",
       });
     }
   });
@@ -172,6 +199,29 @@ const TaskFocusedApp: React.FC = () => {
       subtaskId: string, 
       completed: boolean 
     }) => {
+      // Optimistic update
+      const previousGoals = queryClient.getQueryData<Goal[]>(['/api/goals']) || [];
+      
+      // Create a deep copy of the goals to modify
+      const optimisticGoals = JSON.parse(JSON.stringify(previousGoals));
+      
+      // Update the subtask completion status in our optimistic data
+      const goalIndex = optimisticGoals.findIndex((g: Goal) => g.id === goalId);
+      if (goalIndex !== -1) {
+        const taskIndex = optimisticGoals[goalIndex].tasks.findIndex((t: any) => t.id === taskId);
+        if (taskIndex !== -1 && optimisticGoals[goalIndex].tasks[taskIndex].subtasks) {
+          const subtaskIndex = optimisticGoals[goalIndex].tasks[taskIndex].subtasks.findIndex(
+            (s: any) => s.id === subtaskId
+          );
+          if (subtaskIndex !== -1) {
+            optimisticGoals[goalIndex].tasks[taskIndex].subtasks[subtaskIndex].completed = completed;
+          }
+        }
+      }
+      
+      // Set the optimistic data immediately
+      queryClient.setQueryData(['/api/goals'], optimisticGoals);
+      
       return await apiRequest("PATCH", "/api/subtasks", {
         goalId,
         taskId,
@@ -179,7 +229,8 @@ const TaskFocusedApp: React.FC = () => {
         completed
       });
     },
-    onSuccess: () => {
+    onError: () => {
+      // On error, rollback by refetching fresh data
       queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
     }
   });
