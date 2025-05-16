@@ -1254,6 +1254,76 @@ export default function TaskFocusedApp() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Add Task Modal */}
+      <Dialog open={addTaskModalOpen} onOpenChange={setAddTaskModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogTitle>Add New Task</DialogTitle>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="taskTitle" className="text-sm font-medium">
+                Task Title
+              </label>
+              <Input
+                id="taskTitle"
+                placeholder="Enter task title"
+                value={addTaskTitle}
+                onChange={(e) => setAddTaskTitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="taskComplexity" className="text-sm font-medium">
+                Task Difficulty
+              </label>
+              <div className="flex flex-col space-y-2">
+                <Button
+                  type="button"
+                  variant={addTaskComplexity === "high" ? "default" : "outline"}
+                  className={`justify-start ${addTaskComplexity === "high" ? "bg-blue-600 text-white" : ""}`}
+                  onClick={() => setAddTaskComplexity("high")}
+                >
+                  <span className="mr-2">🔥</span> High Difficulty
+                </Button>
+                <Button
+                  type="button"
+                  variant={addTaskComplexity === "medium" ? "default" : "outline"}
+                  className={`justify-start ${addTaskComplexity === "medium" ? "bg-blue-600 text-white" : ""}`}
+                  onClick={() => setAddTaskComplexity("medium")}
+                >
+                  <span className="mr-2">⚡</span> Medium Difficulty
+                </Button>
+                <Button
+                  type="button"
+                  variant={addTaskComplexity === "low" ? "default" : "outline"}
+                  className={`justify-start ${addTaskComplexity === "low" ? "bg-blue-600 text-white" : ""}`}
+                  onClick={() => setAddTaskComplexity("low")}
+                >
+                  <span className="mr-2">🌱</span> Low Difficulty
+                </Button>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setAddTaskModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (addTaskTitle.trim() && addTaskGoalId) {
+                  addTask.mutate({ 
+                    goalId: addTaskGoalId,
+                    title: addTaskTitle,
+                    complexity: addTaskComplexity
+                  });
+                }
+              }}
+              disabled={!addTaskTitle.trim() || !addTaskGoalId}
+            >
+              Add Task
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
