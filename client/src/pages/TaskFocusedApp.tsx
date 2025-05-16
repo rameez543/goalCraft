@@ -62,10 +62,17 @@ const TaskFocusedApp = () => {
     title: string;
   } | null>(null);
   
+  // Tab preservation
+  const activeTabRef = useRef<string | null>(null);
+  
   // Fetch user's goals
   const { data: goals = [], isLoading: isLoadingGoals } = useQuery<Goal[]>({
     queryKey: ['/api/goals'],
-    enabled: !!user
+    enabled: !!user,
+    // Don't refetch if we're just on a different tab temporarily
+    refetchOnWindowFocus: false,
+    // This is key: ensure we don't lose our place when data is updated
+    keepPreviousData: true
   });
   
   // Auto-scroll to the latest message
