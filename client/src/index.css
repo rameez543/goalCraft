@@ -3,29 +3,29 @@
 @tailwind utilities;
 
 :root {
-  --background: 240 30% 99%;
-  --foreground: 222 47% 11%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215 16% 47%;
+  --background: 0 0% 100%;
+  --foreground: 0 0% 15%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 45%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
+  --popover-foreground: 0 0% 15%;
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --primary: 262 83% 58%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222 47% 11%;
-  --accent: 262 83% 58%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --ring: 262 83% 58%;
-  --radius: 0.75rem;
-  --success: 142 71% 45%;
+  --card-foreground: 0 0% 15%;
+  --border: 0 0% 90%;
+  --input: 0 0% 90%;
+  --primary: 220 60% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 15%;
+  --accent: 220 60% 50%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 70% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --ring: 220 60% 50%;
+  --radius: 0.5rem;
+  --success: 142 65% 45%;
   --warning: 38 92% 50%;
-  --error: 0 84% 60%;
+  --error: 0 70% 50%;
 }
 
 .dark {
@@ -107,51 +107,46 @@
   transform: rotate(45deg);
 }
 
-/* Elegant card styling */
+/* Simple card styling */
 .goal-card {
-  transition: all 0.3s ease;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-  border-radius: 16px;
+  transition: all 0.2s ease;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
 }
 
 .goal-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 20px -4px rgba(124, 58, 237, 0.12), 0 4px 8px -2px rgba(124, 58, 237, 0.06);
-  border: 1px solid rgba(124, 58, 237, 0.25);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
 }
 
-/* Task card elegant styling */
+/* Task card simple styling */
 .task-card {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
   transition: all 0.2s ease;
 }
 
 .task-card:hover {
-  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.1);
-  border-color: rgba(124, 58, 237, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Beautiful gradient backgrounds */
-.gradient-header {
-  background: linear-gradient(135deg, #f9f9ff, #f0e7ff);
-  border-bottom: 1px solid rgba(124, 58, 237, 0.1);
+/* Plain background styles */
+.simple-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.gradient-primary {
-  background: linear-gradient(135deg, #9333ea, #6366f1);
+.simple-primary {
+  background: #3b82f6;
 }
 
-.gradient-progress {
-  background: linear-gradient(to right, #9333ea, #6366f1);
-  height: 6px;
-  border-radius: 6px;
+.simple-progress {
+  background: #3b82f6;
+  height: 4px;
+  border-radius: 2px;
 }
 
 /* Highlight animation for goal cards */

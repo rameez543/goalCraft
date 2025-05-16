@@ -509,13 +509,13 @@ export default function TaskFocusedApp() {
   };
   
   return (
-    <div className="flex flex-col h-full min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+    <div className="flex flex-col h-full min-h-screen bg-[#f9f9f9]">
       {/* Header/Nav */}
-      <header className="gradient-header backdrop-blur-md shadow-sm py-3 px-4 sm:px-6 sticky top-0 z-10">
+      <header className="bg-white shadow-sm py-3 px-4 sm:px-6 sticky top-0 z-10">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Star className="h-6 w-6 text-purple-500" />
-            <h1 className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">TaskBreaker</h1>
+            <Star className="h-6 w-6 text-blue-600" />
+            <h1 className="text-xl font-semibold text-gray-800">TaskBreaker</h1>
           </div>
           
           <div className="flex items-center gap-1 sm:gap-2">
@@ -576,14 +576,14 @@ export default function TaskFocusedApp() {
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Main task area */}
-        <div className="flex-1 overflow-y-auto p-4 bg-transparent backdrop-blur-sm">
+        <div className="flex-1 overflow-y-auto p-4 bg-transparent">
           <Tabs defaultValue="today" className="space-y-5">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
-              <TabsList className="bg-white/90 backdrop-blur-md border border-purple-100 shadow-sm rounded-full w-full sm:w-auto">
-                <TabsTrigger value="today" className="flex-1 sm:flex-initial data-[state=active]:gradient-primary data-[state=active]:text-white rounded-full">
+              <TabsList className="bg-white border shadow-sm rounded-md w-full sm:w-auto">
+                <TabsTrigger value="today" className="flex-1 sm:flex-initial data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md">
                   ⚡ Today
                 </TabsTrigger>
-                <TabsTrigger value="goals" className="flex-1 sm:flex-initial data-[state=active]:gradient-primary data-[state=active]:text-white rounded-full">
+                <TabsTrigger value="goals" className="flex-1 sm:flex-initial data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md">
                   🎯 My Goals
                 </TabsTrigger>
               </TabsList>
