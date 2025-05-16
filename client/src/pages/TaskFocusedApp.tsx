@@ -260,8 +260,9 @@ export default function TaskFocusedApp() {
   // Edit goal mutation
   const editGoal = useMutation({
     mutationFn: async ({ id, title }: { id: number, title: string }) => {
+      console.log("Updating goal:", id, title);
       return await apiRequest("PATCH", `/api/goals/${id}`, {
-        title
+        title: title
       });
     },
     onSuccess: async () => {
@@ -374,7 +375,7 @@ export default function TaskFocusedApp() {
   };
   
   return (
-    <div className="flex flex-col h-full min-h-screen bg-slate-50">
+    <div className="flex flex-col h-full min-h-screen bg-gradient-to-br from-gray-50 to-slate-100">
       {/* Header/Nav */}
       <header className="bg-white shadow-sm border-b py-2 px-4">
         <div className="flex justify-between items-center">
@@ -426,14 +427,14 @@ export default function TaskFocusedApp() {
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Main task area */}
-        <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-4 bg-transparent backdrop-blur-[2px]">
           <Tabs defaultValue="today" className="space-y-4">
             <div className="flex justify-between items-center">
-              <TabsList className="bg-white border">
-                <TabsTrigger value="today" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700">
+              <TabsList className="bg-white/80 backdrop-blur border shadow-sm rounded-full">
+                <TabsTrigger value="today" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-full">
                   📌 Today
                 </TabsTrigger>
-                <TabsTrigger value="goals" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700">
+                <TabsTrigger value="goals" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-full">
                   🎯 My Goals
                 </TabsTrigger>
               </TabsList>
@@ -880,9 +881,14 @@ export default function TaskFocusedApp() {
               </Button>
               <Button 
                 type="submit" 
-                disabled={!goalDescription.trim()}
+                disabled={!goalDescription.trim() || createGoal.isPending}
               >
-                Create Goal
+                {createGoal.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : "Create Goal"}
               </Button>
             </div>
           </form>
@@ -924,9 +930,14 @@ export default function TaskFocusedApp() {
               </Button>
               <Button 
                 type="submit" 
-                disabled={!editGoalTitle.trim()}
+                disabled={!editGoalTitle.trim() || editGoal.isPending}
               >
-                Update Goal
+                {editGoal.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : "Update Goal"}
               </Button>
             </div>
           </form>
@@ -956,8 +967,14 @@ export default function TaskFocusedApp() {
                     deleteGoal.mutate(deleteGoalId);
                   }
                 }}
+                disabled={deleteGoal.isPending}
               >
-                Delete Goal
+                {deleteGoal.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : "Delete Goal"}
               </Button>
             </div>
           </div>
