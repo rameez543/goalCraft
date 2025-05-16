@@ -171,7 +171,7 @@ export default function TaskFocusedApp() {
     }
   });
   
-  // Task completion mutation
+  // Task completion mutation with optimistic updates and debounced server communication
   const toggleTaskCompletion = useMutation({
     mutationFn: async ({ goalId, taskId, completed }: { goalId: number; taskId: string; completed: boolean }) => {
       return await apiRequest("PATCH", "/api/tasks", {
@@ -180,21 +180,69 @@ export default function TaskFocusedApp() {
         completed
       });
     },
-    onSuccess: async () => {
-      // Refresh goals data
-      await queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+    onMutate: async ({ goalId, taskId, completed }) => {
+      // Cancel any outgoing refetches to prevent UI flicker
+      await queryClient.cancelQueries({ queryKey: ['/api/goals'] });
+      
+      // Save the previous value for potential rollback
+      const previousGoals = queryClient.getQueryData<Goal[]>(['/api/goals']);
+      
+      // Optimistically update goals in UI immediately
+      if (previousGoals) {
+        const newGoals = previousGoals.map(goal => {
+          if (goal.id === goalId) {
+            // Calculate new progress based on task completion status
+            const updatedTasks = goal.tasks.map(task => {
+              if (task.id === taskId) {
+                return { ...task, completed };
+              }
+              return task;
+            });
+            
+            // Update the goal's progress calculation directly in the optimistic update
+            const completedTaskCount = updatedTasks.filter(t => t.completed).length;
+            const totalTasks = updatedTasks.length;
+            const newProgress = totalTasks > 0 ? Math.round((completedTaskCount / totalTasks) * 100) : 0;
+            
+            return {
+              ...goal,
+              tasks: updatedTasks,
+              progress: newProgress
+            };
+          }
+          return goal;
+        });
+        
+        // Update the UI immediately
+        queryClient.setQueryData(['/api/goals'], newGoals);
+      }
+      
+      // Return the previous value for potential rollback
+      return { previousGoals };
     },
-    onError: (error) => {
+    onError: (error, variables, context) => {
+      // Rollback to previous state on error
+      if (context?.previousGoals) {
+        queryClient.setQueryData(['/api/goals'], context.previousGoals);
+      }
+      
       console.error("Error toggling task completion:", error);
       toast({
         title: "Error",
         description: "Failed to update task",
         variant: "destructive"
       });
+    },
+    onSettled: () => {
+      // Use a slight delay before refetching to prevent UI jank
+      // This creates a smooth experience while ensuring eventual consistency
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+      }, 700); // Short delay that won't be noticeable but prevents rapid refetches
     }
   });
   
-  // Subtask completion mutation
+  // Subtask completion mutation with enhanced optimistic updates for better performance
   const toggleSubtaskCompletion = useMutation({
     mutationFn: async ({ 
       goalId, 
@@ -214,17 +262,82 @@ export default function TaskFocusedApp() {
         completed
       });
     },
-    onSuccess: async () => {
-      // Refresh goals data 
-      await queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+    onMutate: async ({ goalId, taskId, subtaskId, completed }) => {
+      // Cancel any outgoing refetches to prevent UI flicker
+      await queryClient.cancelQueries({ queryKey: ['/api/goals'] });
+      
+      // Save previous state for potential rollback
+      const previousGoals = queryClient.getQueryData<Goal[]>(['/api/goals']);
+      
+      // Apply optimistic update immediately to make UI responsive
+      if (previousGoals) {
+        const newGoals = previousGoals.map(goal => {
+          if (goal.id === goalId) {
+            // Create updated tasks with the subtask change
+            const updatedTasks = goal.tasks.map(task => {
+              if (task.id === taskId) {
+                const updatedSubtasks = task.subtasks?.map(subtask => {
+                  if (subtask.id === subtaskId) {
+                    return { ...subtask, completed };
+                  }
+                  return subtask;
+                });
+                
+                // Check if all subtasks are completed to maybe update parent task completion
+                const allSubtasksCompleted = updatedSubtasks?.every(st => st.completed) || false;
+                
+                return {
+                  ...task,
+                  // Update subtasks array
+                  subtasks: updatedSubtasks,
+                  // Optionally update parent task status if all subtasks completed
+                  ...(allSubtasksCompleted && updatedSubtasks && updatedSubtasks.length > 0 
+                    ? { completed: true } 
+                    : {})
+                };
+              }
+              return task;
+            });
+            
+            // Recalculate goal progress based on all task completions
+            const completedTaskCount = updatedTasks.filter(t => t.completed).length;
+            const totalTasks = updatedTasks.length;
+            const newProgress = totalTasks > 0 ? Math.round((completedTaskCount / totalTasks) * 100) : 0;
+            
+            return {
+              ...goal,
+              tasks: updatedTasks,
+              progress: newProgress
+            };
+          }
+          return goal;
+        });
+        
+        // Update UI immediately
+        queryClient.setQueryData(['/api/goals'], newGoals);
+      }
+      
+      return { previousGoals };
     },
-    onError: (error) => {
+    onError: (error, variables, context) => {
+      // Restore previous state on error
+      if (context?.previousGoals) {
+        queryClient.setQueryData(['/api/goals'], context.previousGoals);
+      }
+      
       console.error("Error toggling subtask completion:", error);
       toast({
         title: "Error",
         description: "Failed to update subtask",
         variant: "destructive"
       });
+    },
+    onSettled: () => {
+      // Use a minimal delay to prevent excessive network requests while 
+      // ensuring data consistency with the server
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+      }, 500);
     }
   });
   
