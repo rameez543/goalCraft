@@ -139,16 +139,81 @@ Always respond in the first person as the AI coach.
         
         const updatedTasks = specificGoal.tasks.map(t => {
           if (t.id === taskMentioned.id) {
-            // If completion is mentioned, mark as complete
+            // Create updated task object
+            let updatedTask = { ...t };
+            
+            // Handle completion flag
             if (completionIntent) {
-              return { ...t, completed: true };
+              updatedTask.completed = true;
+              return updatedTask;
             }
             
-            // Otherwise, try to update the title if a new one can be extracted
+            // Check for priority/complexity related keywords
+            const lowercaseMsg = input.message.toLowerCase();
+            
+            // Set complexity based on priority keywords
+            if (lowercaseMsg.includes('high priority') || 
+                lowercaseMsg.includes('urgent') || 
+                lowercaseMsg.includes('important') || 
+                lowercaseMsg.includes('critical')) {
+              updatedTask.complexity = 'high';
+            } else if (lowercaseMsg.includes('medium priority') || 
+                       lowercaseMsg.includes('moderate priority')) {
+              updatedTask.complexity = 'medium';
+            } else if (lowercaseMsg.includes('low priority') || 
+                       lowercaseMsg.includes('not urgent')) {
+              updatedTask.complexity = 'low';
+            }
+            
+            // Check for difficulty-related keywords
+            if (lowercaseMsg.includes('hard') || 
+                lowercaseMsg.includes('difficult') || 
+                lowercaseMsg.includes('challenging')) {
+              updatedTask.complexity = 'high';
+            } else if (lowercaseMsg.includes('medium difficulty') || 
+                       lowercaseMsg.includes('moderate')) {
+              updatedTask.complexity = 'medium';
+            } else if (lowercaseMsg.includes('easy') || 
+                       lowercaseMsg.includes('simple') || 
+                       lowercaseMsg.includes('basic')) {
+              updatedTask.complexity = 'low';
+            }
+            
+            // Check for time estimates in the message
+            const timeMatches = lowercaseMsg.match(/(\d+)\s*(?:min|minute|minutes)/);
+            if (timeMatches && timeMatches[1]) {
+              const minutes = parseInt(timeMatches[1]);
+              if (!isNaN(minutes) && minutes > 0) {
+                updatedTask.estimatedMinutes = minutes;
+              }
+            }
+            
+            // Check for due date information
+            const dateMatches = lowercaseMsg.match(/(today|tomorrow|next week|on|due)/i);
+            if (dateMatches) {
+              // Simple date handling for common phrases
+              const today = new Date();
+              
+              if (lowercaseMsg.includes('today')) {
+                updatedTask.dueDate = today.toISOString();
+              } else if (lowercaseMsg.includes('tomorrow')) {
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                updatedTask.dueDate = tomorrow.toISOString();
+              } else if (lowercaseMsg.includes('next week')) {
+                const nextWeek = new Date(today);
+                nextWeek.setDate(nextWeek.getDate() + 7);
+                updatedTask.dueDate = nextWeek.toISOString();
+              }
+            }
+            
+            // Update the title if a new one is provided
             const newTitle = extractNewTaskTitleFromMessage(input.message);
             if (newTitle) {
-              return { ...t, title: newTitle };
+              updatedTask.title = newTitle;
             }
+            
+            return updatedTask;
           }
           return t;
         });
@@ -292,12 +357,18 @@ function determineResponseType(response: string, userMessage: string): ChatRespo
 function detectRemoveTaskIntent(message: string): boolean {
   const removeKeywords = [
     'remove', 'delete', 'eliminate', 'get rid of', 'cancel', 
-    'drop', 'trash', 'erase', 'take off'
+    'drop', 'trash', 'erase', 'take off', 'destroy', 'kill',
+    'wipe', 'clear'
   ];
   
   const lowercaseMessage = message.toLowerCase();
   return removeKeywords.some(keyword => lowercaseMessage.includes(keyword)) && 
-         (lowercaseMessage.includes('task') || lowercaseMessage.includes('to-do'));
+         (lowercaseMessage.includes('task') || 
+          lowercaseMessage.includes('to-do') || 
+          lowercaseMessage.includes('item') || 
+          lowercaseMessage.includes('it') ||
+          /task\s+(\d+)/i.test(lowercaseMessage) ||
+          /#(\d+)/.test(lowercaseMessage));
 }
 
 /**
@@ -306,12 +377,33 @@ function detectRemoveTaskIntent(message: string): boolean {
 function detectEditTaskIntent(message: string): boolean {
   const editKeywords = [
     'edit', 'change', 'update', 'modify', 'alter', 'revise', 
-    'complete', 'finish', 'done', 'mark', 'rename', 'adjust'
+    'rename', 'adjust', 'call', 'name', 'set'
+  ];
+  
+  const completionKeywords = [
+    'complete', 'finish', 'done', 'mark', 'check off', 'check', 
+    'completed', 'finished', 'did', 'accomplish', 'achieved', 'success'
   ];
   
   const lowercaseMessage = message.toLowerCase();
+  
+  // Special handling for completion-related edits
+  if (completionKeywords.some(keyword => lowercaseMessage.includes(keyword))) {
+    return (lowercaseMessage.includes('task') || 
+            lowercaseMessage.includes('to-do') || 
+            lowercaseMessage.includes('item') || 
+            lowercaseMessage.includes('it') ||
+            /task\s+(\d+)/i.test(lowercaseMessage) ||
+            /#(\d+)/.test(lowercaseMessage));
+  }
+  
   return editKeywords.some(keyword => lowercaseMessage.includes(keyword)) && 
-         (lowercaseMessage.includes('task') || lowercaseMessage.includes('to-do'));
+         (lowercaseMessage.includes('task') || 
+          lowercaseMessage.includes('to-do') || 
+          lowercaseMessage.includes('item') || 
+          lowercaseMessage.includes('it') ||
+          /task\s+(\d+)/i.test(lowercaseMessage) ||
+          /#(\d+)/.test(lowercaseMessage));
 }
 
 /**
@@ -319,17 +411,36 @@ function detectEditTaskIntent(message: string): boolean {
  */
 function findTaskInMessage(message: string, tasks: any[]): any | undefined {
   const lowercaseMessage = message.toLowerCase();
+  let foundTask: any = undefined;
   
   // First try to find exact match by task title
   for (const task of tasks) {
     if (lowercaseMessage.includes(task.title.toLowerCase())) {
       return task;
     }
+    
+    // Also check for partial matches with at least 3 words in common
+    const taskTitleWords = task.title.toLowerCase().split(' ').filter((w: string) => w.length > 2);
+    const messageWords = lowercaseMessage.split(' ').filter(w => w.length > 2);
+    
+    let commonWords = 0;
+    for (const titleWord of taskTitleWords) {
+      if (messageWords.some(messageWord => messageWord.includes(titleWord) || titleWord.includes(messageWord))) {
+        commonWords++;
+      }
+    }
+    
+    // If there are at least 3 common words or 50% of the title words match, it's likely the same task
+    if (commonWords >= 3 || (taskTitleWords.length > 0 && commonWords / taskTitleWords.length >= 0.5)) {
+      foundTask = task;
+    }
   }
+  
+  if (foundTask) return foundTask;
   
   // If no exact match, try to find by keywords or task number mention
   // e.g., "the first task", "task 2", etc.
-  const taskNumberMatch = message.match(/task\s+(\d+)/i);
+  const taskNumberMatch = message.match(/task\s+(\d+)/i) || message.match(/item\s+(\d+)/i) || message.match(/#(\d+)/);
   if (taskNumberMatch && taskNumberMatch[1]) {
     const taskNumber = parseInt(taskNumberMatch[1]);
     if (taskNumber > 0 && taskNumber <= tasks.length) {
@@ -339,18 +450,30 @@ function findTaskInMessage(message: string, tasks: any[]): any | undefined {
   
   // Look for "the first/second/third task" mentions
   const ordinals = ['first', 'second', 'third', 'fourth', 'fifth', 'last'];
-  ordinals.forEach((ordinal, index) => {
-    if (lowercaseMessage.includes(`${ordinal} task`)) {
+  for (let i = 0; i < ordinals.length; i++) {
+    const ordinal = ordinals[i];
+    if (lowercaseMessage.includes(`${ordinal} task`) || 
+        lowercaseMessage.includes(`${ordinal} item`) || 
+        lowercaseMessage.includes(`${ordinal} one`)) {
       // Handle "last task" special case
-      if (ordinal === 'last') {
+      if (ordinal === 'last' && tasks.length > 0) {
         return tasks[tasks.length - 1];
       }
       // Otherwise return the corresponding task
-      if (index < tasks.length) {
-        return tasks[index];
+      if (i < tasks.length) {
+        return tasks[i];
       }
     }
-  });
+  }
+  
+  // If there's only one task and it's unambiguously about modifying a task, return that
+  if (tasks.length === 1 && (
+    detectRemoveTaskIntent(message) || 
+    detectEditTaskIntent(message) || 
+    lowercaseMessage.includes('task')
+  )) {
+    return tasks[0];
+  }
   
   return undefined;
 }
@@ -359,8 +482,16 @@ function findTaskInMessage(message: string, tasks: any[]): any | undefined {
  * Extract a new task title from the user's message
  */
 function extractNewTaskTitleFromMessage(message: string): string | null {
+  // Try to find patterns with quotes first for more precise extraction
+  const quotedMatch = message.match(/to\s+["']([^"']+)["']/i) || 
+                     message.match(/as\s+["']([^"']+)["']/i);
+  
+  if (quotedMatch && quotedMatch[1]) {
+    return quotedMatch[1].trim();
+  }
+  
   // Try to find "to X" pattern where X is the new task title
-  const toMatch = message.match(/to\s+["']([^"']+)["']/i) || 
+  const toMatch = message.match(/(?:change|rename|update|modify|edit|set)\s+(?:it|task|this|that)\s+to\s+([^,.!?]+)/i) || 
                  message.match(/to\s+([^,.!?]+)/i);
   
   if (toMatch && toMatch[1]) {
@@ -368,11 +499,25 @@ function extractNewTaskTitleFromMessage(message: string): string | null {
   }
   
   // Try to find patterns like "rename task to X"
-  const renameMatch = message.match(/rename\s+(?:the\s+)?(?:task\s+)?to\s+["']([^"']+)["']/i) ||
-                     message.match(/rename\s+(?:the\s+)?(?:task\s+)?to\s+([^,.!?]+)/i);
+  const renameMatch = message.match(/rename\s+(?:the\s+)?(?:task\s+)?to\s+([^,.!?]+)/i) ||
+                     message.match(/change\s+(?:the\s+)?(?:task\s+)?to\s+([^,.!?]+)/i);
   
   if (renameMatch && renameMatch[1]) {
     return renameMatch[1].trim();
+  }
+  
+  // Look for "make it X" pattern
+  const makeItMatch = message.match(/make\s+(?:it|this|that|the\s+task)\s+([^,.!?]+)/i);
+  
+  if (makeItMatch && makeItMatch[1]) {
+    return makeItMatch[1].trim();
+  }
+  
+  // Look for patterns where the task name comes after words like "call it" or "name it"
+  const callItMatch = message.match(/(?:call|name)\s+(?:it|this|that|the\s+task)\s+([^,.!?]+)/i);
+  
+  if (callItMatch && callItMatch[1]) {
+    return callItMatch[1].trim();
   }
   
   return null;
@@ -389,6 +534,51 @@ function findGoalFromMessage(message: string, goals: Goal[]): Goal | undefined {
     if (lowercaseMessage.includes(goal.title.toLowerCase())) {
       return goal;
     }
+    
+    // Also check for partial matches with at least 3 words in common
+    const goalTitleWords = goal.title.toLowerCase().split(' ').filter((w: string) => w.length > 2);
+    const messageWords = lowercaseMessage.split(' ').filter(w => w.length > 2);
+    
+    let commonWords = 0;
+    for (const titleWord of goalTitleWords) {
+      if (messageWords.some(messageWord => messageWord.includes(titleWord) || titleWord.includes(messageWord))) {
+        commonWords++;
+      }
+    }
+    
+    // If there are at least 3 common words or 50% of the title words match, it's likely the same goal
+    if (commonWords >= 3 || (goalTitleWords.length > 0 && commonWords / goalTitleWords.length >= 0.5)) {
+      return goal;
+    }
+  }
+  
+  // If not found by title, try to find by looking at goal number mentions
+  // e.g. "goal 1", "first goal", etc.
+  const goalNumberMatch = message.match(/goal\s+(\d+)/i) || message.match(/#(\d+)/);
+  if (goalNumberMatch && goalNumberMatch[1]) {
+    const goalNumber = parseInt(goalNumberMatch[1]);
+    if (goalNumber > 0 && goalNumber <= goals.length) {
+      return goals[goalNumber - 1];
+    }
+  }
+  
+  // Check for ordinals
+  const ordinals = ['first', 'second', 'third', 'fourth', 'fifth', 'last'];
+  for (let i = 0; i < ordinals.length; i++) {
+    const ordinal = ordinals[i];
+    if (lowercaseMessage.includes(`${ordinal} goal`) || 
+        lowercaseMessage.includes(`${ordinal} project`)) {
+      if (ordinal === 'last' && goals.length > 0) {
+        return goals[goals.length - 1];
+      } else if (i < goals.length) {
+        return goals[i];
+      }
+    }
+  }
+  
+  // If we couldn't find a specific goal but there's only one goal, return that
+  if (goals.length === 1) {
+    return goals[0];
   }
   
   return undefined;
