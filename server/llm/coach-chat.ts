@@ -88,10 +88,14 @@ Always respond in the first person as the AI coach.
 `;
 
   // Generate AI response using the selected model
+  const userPrompt = conversationHistory.map(msg => 
+    `${msg.role}: ${msg.content || "No content"}`
+  ).join('\n');
+  
   const llmResponse = await generateCompletion({
     model: getModel(),
     systemPrompt,
-    userPrompt: conversationHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n')
+    userPrompt
   });
 
   // Add assistant response to history for future context
