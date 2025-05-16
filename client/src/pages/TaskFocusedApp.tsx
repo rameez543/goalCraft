@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 
+// Message interface
 interface Message {
   id: string;
   content: string;
@@ -37,47 +38,44 @@ interface Message {
   goalId?: number;
 }
 
-const TaskFocusedApp = () => {
+export default function TaskFocusedApp() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Chat state
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
-      content: "Hi! 👋 Tell me your goal, and I'll help break it down into actionable tasks.",
+      content: "Hi there! I'm your AI task coach. How can I help you today?",
       sender: "ai",
       timestamp: new Date()
     }
   ]);
-  const [expandedGoals, setExpandedGoals] = useState<Record<number, boolean>>({});
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Modal state
   const [chatOpen, setChatOpen] = useState(false);
-  const [newGoalMode, setNewGoalMode] = useState(false);
-  const [deleteGoalId, setDeleteGoalId] = useState<number | null>(null);
-  const [editingTask, setEditingTask] = useState<{
+  const [goalDescription, setGoalDescription] = useState("");
+  const [goalModalOpen, setGoalModalOpen] = useState(false);
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<{
     goalId: number;
     taskId: string;
     title: string;
   } | null>(null);
   
-  // Tab preservation using state
-  const [activeTab, setActiveTab] = useState<string>("today");
-  
-  // Initialize the tab to "today" as default
-  useEffect(() => {
-    // Only set if it's not already set
-    if (!activeTab) {
-      setActiveTab("today");
-    }
-  }, []);
+  // Conversation history for AI context retention
+  const [conversationHistory, setConversationHistory] = useState<
+    Array<{ role: 'user' | 'assistant'; content: string }>
+  >([]);
   
   // Fetch user's goals
   const { data: goals = [], isLoading: isLoadingGoals } = useQuery<Goal[]>({
     queryKey: ['/api/goals'],
     enabled: !!user,
-    // Don't refetch if we're just on a different tab temporarily
     refetchOnWindowFocus: false
   });
   
@@ -87,11 +85,6 @@ const TaskFocusedApp = () => {
   }, [messages]);
   
   // Send message mutation
-  // Store conversation history and send with each request
-  const [conversationHistory, setConversationHistory] = useState<
-    Array<{ role: 'user' | 'assistant'; content: string }>
-  >([]);
-  
   const sendMessage = useMutation({
     mutationFn: async (content: string) => {
       return await apiRequest("POST", "/api/coach/chat", {
@@ -126,7 +119,7 @@ const TaskFocusedApp = () => {
           timestamp: new Date(),
           isTaskCreation: data.tasksCreated,
           goalId: data.tasksCreated ? goals.find(g => 
-            g.tasks.some(t => data.relatedTasks?.includes(t.id))
+            g.tasks.some(t => data.relatedTasks?.includes(t.title))
           )?.id : undefined
         };
         
@@ -136,128 +129,68 @@ const TaskFocusedApp = () => {
         // Update conversation history with AI response for context retention
         setConversationHistory(prev => [...prev, { role: 'assistant', content: data.message }]);
         
-        // If new tasks were created, refresh goals data without causing navigation
+        // If new tasks were created, refresh goals data
         if (data.tasksCreated) {
-          // Invalidate and then refetch to ensure data is fresh
           await queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
-          queryClient.refetchQueries({ 
-            queryKey: ['/api/goals'],
-            type: 'all'
-          });
-          
-          // Auto-expand the goal that was just created
-          if (aiMessage.goalId !== undefined) {
-            setExpandedGoals(prev => ({
-              ...prev,
-              [aiMessage.goalId as number]: true
-            }));
-          }
-          
-          // If we were in new goal mode, exit it
-          if (newGoalMode) {
-            setNewGoalMode(false);
-          }
-          
-          toast({
-            title: "✅ Tasks created!",
-            description: "Your goal has been broken down into actionable tasks",
-          });
         }
       } catch (error) {
-        console.error("Failed to process AI response:", error);
+        console.error("Failed to parse response:", error);
+        toast({
+          title: "Error",
+          description: "Failed to parse AI response",
+          variant: "destructive"
+        });
+      } finally {
+        setIsTyping(false);
       }
     },
     onError: (error) => {
-      const errorMessage: Message = {
-        id: Date.now().toString(),
-        content: "Sorry, I'm having trouble processing your request. Please try again.",
-        sender: "ai",
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
-      
+      console.error("Error sending message:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Something went wrong",
+        description: "Failed to send message",
         variant: "destructive"
       });
-    },
-    onSettled: () => {
       setIsTyping(false);
     }
   });
   
-  // Toggle task completion
+  // Task completion mutation
   const toggleTaskCompletion = useMutation({
-    mutationFn: async ({ goalId, taskId, completed }: { goalId: number, taskId: string, completed: boolean }) => {
-      // Optimistic update
-      const previousGoals = queryClient.getQueryData<Goal[]>(['/api/goals']) || [];
-      
-      // Create a deep copy of the goals to modify
-      const optimisticGoals = JSON.parse(JSON.stringify(previousGoals));
-      
-      // Update the task completion status in our optimistic data
-      const goalIndex = optimisticGoals.findIndex((g: Goal) => g.id === goalId);
-      if (goalIndex !== -1) {
-        const taskIndex = optimisticGoals[goalIndex].tasks.findIndex((t: any) => t.id === taskId);
-        if (taskIndex !== -1) {
-          optimisticGoals[goalIndex].tasks[taskIndex].completed = completed;
-        }
-      }
-      
-      // Set the optimistic data immediately
-      queryClient.setQueryData(['/api/goals'], optimisticGoals);
-      
+    mutationFn: async ({ goalId, taskId, completed }: { goalId: number; taskId: string; completed: boolean }) => {
       return await apiRequest("PATCH", "/api/tasks", {
         goalId,
         taskId,
         completed
       });
     },
-    onError: (error, variables) => {
-      // On error, rollback by refetching fresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+    onSuccess: async () => {
+      // Refresh goals data
+      await queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+    },
+    onError: (error) => {
+      console.error("Error toggling task completion:", error);
       toast({
-        title: "Error updating task",
-        description: error instanceof Error ? error.message : "Something went wrong",
+        title: "Error",
+        description: "Failed to update task",
         variant: "destructive"
       });
-    },
-    // No toast notification or additional actions on success
-    onSuccess: () => {}
+    }
   });
   
-  // Toggle subtask completion
+  // Subtask completion mutation
   const toggleSubtaskCompletion = useMutation({
-    mutationFn: async ({ goalId, taskId, subtaskId, completed }: { 
-      goalId: number, 
-      taskId: string, 
-      subtaskId: string, 
+    mutationFn: async ({ 
+      goalId, 
+      taskId, 
+      subtaskId, 
+      completed 
+    }: { 
+      goalId: number; 
+      taskId: string; 
+      subtaskId: string; 
       completed: boolean 
     }) => {
-      // Optimistic update
-      const previousGoals = queryClient.getQueryData<Goal[]>(['/api/goals']) || [];
-      
-      // Create a deep copy of the goals to modify
-      const optimisticGoals = JSON.parse(JSON.stringify(previousGoals));
-      
-      // Update the subtask completion status in our optimistic data
-      const goalIndex = optimisticGoals.findIndex((g: Goal) => g.id === goalId);
-      if (goalIndex !== -1) {
-        const taskIndex = optimisticGoals[goalIndex].tasks.findIndex((t: any) => t.id === taskId);
-        if (taskIndex !== -1 && optimisticGoals[goalIndex].tasks[taskIndex].subtasks) {
-          const subtaskIndex = optimisticGoals[goalIndex].tasks[taskIndex].subtasks.findIndex(
-            (s: any) => s.id === subtaskId
-          );
-          if (subtaskIndex !== -1) {
-            optimisticGoals[goalIndex].tasks[taskIndex].subtasks[subtaskIndex].completed = completed;
-          }
-        }
-      }
-      
-      // Set the optimistic data immediately
-      queryClient.setQueryData(['/api/goals'], optimisticGoals);
-      
       return await apiRequest("PATCH", "/api/subtasks", {
         goalId,
         taskId,
@@ -265,178 +198,155 @@ const TaskFocusedApp = () => {
         completed
       });
     },
-    onError: () => {
-      // On error, rollback by refetching fresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
-    },
-    // No additional actions on success
-    onSuccess: () => {}
-  });
-  
-  // Delete goal
-  const deleteGoal = useMutation({
-    mutationFn: async (goalId: number) => {
-      return await apiRequest("DELETE", `/api/goals/${goalId}`);
-    },
-    onMutate: async (goalId: number) => {
-      // Capture the current goals state
-      const previousGoals = queryClient.getQueryData<Goal[]>(['/api/goals']) || [];
-      
-      // Optimistically update the goals list by removing the deleted goal
-      queryClient.setQueryData<Goal[]>(['/api/goals'], 
-        previousGoals.filter(goal => goal.id !== goalId)
-      );
-      
-      return { previousGoals };
-    },
-    onError: (err, goalId, context) => {
-      // On error, restore the previous goals state
-      if (context?.previousGoals) {
-        queryClient.setQueryData(['/api/goals'], context.previousGoals);
-      }
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to delete goal. Please try again.',
-      });
-      setDeleteGoalId(null);
-    },
-    onSuccess: () => {
-      // Just refetch data silently without navigation changes
-      queryClient.refetchQueries({ 
-        queryKey: ['/api/goals'],
-        type: 'active',
-        exact: true
-      });
-      toast({
-        title: "🗑️ Goal deleted",
-        description: "The goal and all its tasks have been removed",
-        duration: 3000,
-      });
-      setDeleteGoalId(null);
-    }
-  });
-  
-  // Edit task
-  const editTask = useMutation({
-    mutationFn: async ({ goalId, taskId, title }: { goalId: number, taskId: string, title: string }) => {
-      return await apiRequest("PATCH", "/api/tasks/edit", {
-        goalId,
-        taskId,
-        title
-      });
-    },
-    onSuccess: () => {
-      // Use refetchQueries instead of invalidateQueries to prevent unwanted navigation
-      queryClient.refetchQueries({ 
-        queryKey: ['/api/goals'],
-        type: 'active' 
-      });
-      toast({
-        title: "✏️ Task updated",
-        duration: 1500,
-      });
-      setEditingTask(null);
+    onSuccess: async () => {
+      // Refresh goals data 
+      await queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
     },
     onError: (error) => {
+      console.error("Error toggling subtask completion:", error);
       toast({
-        title: "Error updating task",
-        description: error instanceof Error ? error.message : "Something went wrong",
+        title: "Error",
+        description: "Failed to update subtask",
         variant: "destructive"
       });
     }
   });
   
-  // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (input.trim() === "") return;
-    sendMessage.mutate(input);
-  };
-  
-  // Toggle goal expanded state
-  const toggleGoalExpanded = (goalId: number) => {
-    setExpandedGoals(prev => ({
-      ...prev,
-      [goalId]: !prev[goalId]
-    }));
-  };
-  
-  // Start new goal creation mode
-  const startNewGoal = () => {
-    setNewGoalMode(true);
-    setChatOpen(true);
-    
-    // Add a message to guide the user
-    const aiMessage: Message = {
-      id: Date.now().toString(),
-      content: "Let's create a new goal! 🚀 What would you like to achieve? Please describe your goal in detail, and I'll help break it down into manageable tasks.",
-      sender: "ai",
-      timestamp: new Date()
-    };
-    
-    setMessages([aiMessage]);
-    setInput("");
-  };
-  
-  // Get all incomplete tasks across all goals
-  const getIncompleteTasks = () => {
-    if (!goals) return [];
-    
-    return goals.flatMap(goal => 
-      goal.tasks
-        .filter(task => !task.completed)
-        .map(task => ({
-          goalId: goal.id,
-          goalTitle: goal.title,
-          ...task
-        }))
-    );
-  };
-  
-  // Get priority tasks (due soon or marked important)
-  const getPriorityTasks = () => {
-    const incompleteTasks = getIncompleteTasks();
-    const today = new Date();
-    const threeDaysFromNow = new Date(today);
-    threeDaysFromNow.setDate(today.getDate() + 3);
-    
-    return incompleteTasks.filter(task => {
-      if (!task.dueDate) return false;
+  // Create goal mutation
+  const createGoal = useMutation({
+    mutationFn: async (title: string) => {
+      return await apiRequest("POST", "/api/goals", {
+        title
+      });
+    },
+    onSuccess: async () => {
+      setGoalDescription("");
+      setGoalModalOpen(false);
       
-      const dueDate = new Date(task.dueDate);
-      return dueDate <= threeDaysFromNow;
-    });
+      toast({
+        title: "Goal created",
+        description: "Your goal has been created",
+      });
+      
+      // Refresh goals data
+      await queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+    },
+    onError: (error) => {
+      console.error("Error creating goal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create goal",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Get priority emoji based on complexity
+  const getPriorityEmoji = (complexity: string | undefined) => {
+    switch (complexity?.toLowerCase()) {
+      case 'high':
+        return "😓";
+      case 'medium':
+        return "😐";
+      case 'low':
+        return "😌";
+      default:
+        return "📝";
+    }
+  };
+  
+  // Format timestamp for display
+  const formatTimestamp = (date: Date) => {
+    return new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true
+    }).format(date);
+  };
+  
+  // Calculate all tasks for today's view
+  const todaysTasks = goals.flatMap(goal => 
+    goal.tasks
+      .filter(task => !task.completed)
+      .map(task => ({ ...task, goalId: goal.id, goalTitle: goal.title }))
+  ).sort((a, b) => {
+    // Sort by priority
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    return (
+      (priorityOrder[a.complexity?.toLowerCase() as keyof typeof priorityOrder] || 3) -
+      (priorityOrder[b.complexity?.toLowerCase() as keyof typeof priorityOrder] || 3)
+    );
+  });
+  
+  // Handle task click in chat
+  const handleTaskClick = (goalId: number) => {
+    // Switch to the goals tab
+    const tabsElement = document.querySelector('[role="tablist"]');
+    const goalsTabButton = tabsElement?.querySelector('[value="goals"]');
+    if (goalsTabButton instanceof HTMLElement) {
+      goalsTabButton.click();
+    }
+    
+    // Scroll to and highlight the goal
+    setTimeout(() => {
+      const goalElement = document.getElementById(`goal-${goalId}`);
+      if (goalElement) {
+        goalElement.scrollIntoView({ behavior: 'smooth' });
+        goalElement.classList.add('highlight-goal');
+        setTimeout(() => {
+          goalElement.classList.remove('highlight-goal');
+        }, 2000);
+      }
+    }, 100);
   };
   
   return (
-    <div className="flex flex-col h-screen bg-white overflow-hidden">
-      {/* Header */}
-      <header className="border-b p-3 flex justify-between items-center bg-white">
-        <div className="flex items-center gap-2">
-          <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 text-transparent bg-clip-text">TaskBreaker</span>
-          <Badge variant="outline" className="text-xs font-normal ml-2 bg-purple-50 text-purple-700 border-purple-200">
-            ADHD-friendly
-          </Badge>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-            onClick={() => setChatOpen(true)}
-          >
-            <MessageCircle className="h-4 w-4 mr-1" />
-            Chat with AI
-          </Button>
+    <div className="flex flex-col h-full min-h-screen bg-slate-50">
+      {/* Header/Nav */}
+      <header className="bg-white shadow-sm border-b py-2 px-4">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Star className="h-6 w-6 text-purple-500" />
+            <h1 className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">TaskBreaker</h1>
+          </div>
           
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={user?.profilePicture || undefined} alt={user?.username || "User"} />
-            <AvatarFallback className="bg-gradient-to-br from-purple-600 to-indigo-600 text-white">
-              {user?.username?.charAt(0)?.toUpperCase() || "U"}
-            </AvatarFallback>
-          </Avatar>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setChatOpen(true)}
+              className="flex items-center gap-1"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>AI Coach</span>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setGoalModalOpen(true)}
+              className="flex items-center gap-1"
+            >
+              <Plus className="h-4 w-4" />
+              <span>New Goal</span>
+            </Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="/avatar.png" />
+                  <AvatarFallback>{user?.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuItem>Profile</DropdownMenuItem>
+                <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-red-600">Logout</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
       
@@ -451,911 +361,482 @@ const TaskFocusedApp = () => {
                   📌 Today
                 </TabsTrigger>
                 <TabsTrigger value="goals" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700">
-                  🎯 Goals
-                </TabsTrigger>
-                <TabsTrigger value="completed" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700">
-                  ✅ Completed
+                  🎯 My Goals
                 </TabsTrigger>
               </TabsList>
               
-              <Button 
-                className="bg-purple-600 hover:bg-purple-700 text-white"
-                size="sm"
-                onClick={startNewGoal}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                New Goal
-              </Button>
+              {/* Status info */}
+              <div className="text-sm text-gray-500">
+                {goals.length > 0 ? (
+                  <span>
+                    {todaysTasks.length} tasks remaining
+                  </span>
+                ) : (
+                  <span>No goals yet</span>
+                )}
+              </div>
             </div>
             
-            {/* Today's tab */}
-            <TabsContent value="today" className="mt-0">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-gray-800">Today's Tasks 📝</h2>
-                  <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-0">
-                    {getPriorityTasks().length} tasks
-                  </Badge>
-                </div>
-                
+            {/* Today's Tasks */}
+            <TabsContent value="today" className="space-y-4">
+              <div className="grid grid-cols-1 gap-4">
                 {isLoadingGoals ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                  <div className="flex justify-center items-center p-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
                   </div>
-                ) : getPriorityTasks().length === 0 ? (
-                  <div className="bg-white border rounded-lg p-8 text-center">
-                    <div className="text-5xl mb-4">🎉</div>
-                    <h3 className="text-xl font-medium text-gray-800 mb-2">All caught up!</h3>
-                    <p className="text-gray-600 max-w-md mx-auto mb-6">
-                      You don't have any priority tasks for today. Would you like to create a new goal?
-                    </p>
-                    <Button 
-                      className="bg-purple-600 hover:bg-purple-700"
-                      onClick={startNewGoal}
+                ) : todaysTasks.length > 0 ? (
+                  todaysTasks.map(task => (
+                    <div
+                      key={`${task.goalId}-${task.id}`}
+                      className="bg-white rounded-lg shadow-sm border p-4 transition-all hover:shadow-md"
                     >
-                      <Plus className="h-4 w-4 mr-1" />
-                      New Goal
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {getPriorityTasks().map(task => (
-                      <div 
-                        key={task.id}
-                        className="bg-white border rounded-lg p-4 flex items-start gap-3 transition-shadow hover:shadow-md"
-                      >
-                        <button 
-                          className="mt-0.5 h-5 w-5 rounded-full border-2 border-purple-400 flex-shrink-0 flex items-center justify-center"
-                          onClick={() => {
-                            toggleTaskCompletion.mutate({
-                              goalId: task.goalId,
-                              taskId: task.id,
-                              completed: true
-                            });
-                          }}
+                      <div className="flex items-center gap-3 mb-2">
+                        <button
+                          onClick={() => toggleTaskCompletion.mutate({
+                            goalId: task.goalId!,
+                            taskId: task.id,
+                            completed: !task.completed
+                          })}
+                          className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            task.completed 
+                              ? "bg-green-100 border-green-500 text-green-500" 
+                              : "border-gray-300 hover:border-purple-400"
+                          }`}
                         >
-                          {task.completed && (
-                            <Check className="h-3 w-3 text-purple-600" />
-                          )}
+                          {task.completed && <Check className="h-4 w-4" />}
                         </button>
                         
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-medium text-gray-900">{task.title}</h3>
-                              <p className="text-xs text-gray-500">
-                                Goal: {task.goalTitle}
-                              </p>
-                            </div>
-                            
-                            <div className="flex items-center gap-1">
-                              {task.dueDate && (
-                                <Badge variant="outline" className="text-xs gap-1 border-orange-200 bg-orange-50 text-orange-700">
-                                  <Calendar className="h-3 w-3" />
-                                  {new Date(task.dueDate).toLocaleDateString()}
-                                </Badge>
-                              )}
-                              
-                              {task.estimatedMinutes && (
-                                <Badge variant="outline" className="text-xs gap-1 border-blue-200 bg-blue-50 text-blue-700">
-                                  <Clock className="h-3 w-3" />
-                                  {task.estimatedMinutes} min
-                                </Badge>
-                              )}
-                            </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{getPriorityEmoji(task.complexity)}</span>
+                            <h3 className={`text-md font-medium ${task.completed ? "line-through text-gray-400" : ""}`}>
+                              {task.title}
+                            </h3>
                           </div>
-                          
-                          {task.context && (
-                            <p className="mt-2 text-sm text-gray-600 max-w-3xl">
-                              {task.context}
-                            </p>
-                          )}
-                          
-                          {task.subtasks && task.subtasks.length > 0 && (
-                            <div className="mt-3 space-y-1.5 border-t border-gray-100 pt-2">
-                              <h4 className="text-xs font-medium text-gray-500 mb-1">Subtasks:</h4>
-                              {task.subtasks.map(subtask => (
-                                <div key={subtask.id} className="flex items-center gap-2">
-                                  <div className="w-4 h-4 border border-gray-300 rounded-sm flex items-center justify-center">
-                                    {subtask.completed && (
-                                      <Check className="h-3 w-3 text-purple-600" />
-                                    )}
-                                  </div>
-                                  <span className={`text-sm ${subtask.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
-                                    {subtask.title}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                          <div className="text-xs text-gray-500">
+                            From: {task.goalTitle}
+                          </div>
                         </div>
+                        
+                        <TaskOptionsDropdown 
+                          goalId={task.goalId!} 
+                          taskId={task.id}
+                          onDiscuss={() => {
+                            setSelectedTask({
+                              goalId: task.goalId!,
+                              taskId: task.id,
+                              title: task.title
+                            });
+                            setTaskModalOpen(true);
+                          }}
+                        />
                       </div>
-                    ))}
-                  </div>
-                )}
-                
-                {getPriorityTasks().length > 0 && (
-                  <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 rounded-lg p-4 flex items-center gap-3">
-                    <div className="rounded-full bg-purple-100 p-2">
-                      <Star className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">ADHD Pro Tip 💡</h3>
-                      <p className="text-sm text-gray-600">
-                        Try the Pomodoro technique: focus for 25 minutes, then take a 5-minute break!
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-            
-            {/* Goals tab */}
-            <TabsContent value="goals" className="mt-0">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-gray-800">Your Goals 🎯</h2>
-                </div>
-                
-                {isLoadingGoals ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                  </div>
-                ) : goals.length === 0 ? (
-                  <div className="bg-white border rounded-lg p-8 text-center">
-                    <div className="text-5xl mb-4">🚀</div>
-                    <h3 className="text-xl font-medium text-gray-800 mb-2">Start your journey!</h3>
-                    <p className="text-gray-600 max-w-md mx-auto mb-6">
-                      You don't have any goals yet. Let's create your first goal and break it down into tasks.
-                    </p>
-                    <Button 
-                      className="bg-purple-600 hover:bg-purple-700"
-                      onClick={startNewGoal}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      New Goal
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {[...goals]
-                      .sort((a, b) => {
-                        // Sort by priority: high → medium → low → undefined
-                        const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2, undefined: 3 };
-                        const aPriority = priorityOrder[a.complexity as string || 'undefined'];
-                        const bPriority = priorityOrder[b.complexity as string || 'undefined'];
-                        
-                        return aPriority - bPriority;
-                      })
-                      .map(goal => (
-                      <div 
-                        key={goal.id} 
-                        className="bg-white border rounded-lg overflow-hidden transition-shadow hover:shadow-sm"
-                      >
-                        {/* Goal header */}
-                        <div 
-                          className="p-4 flex items-center justify-between cursor-pointer"
-                          onClick={() => toggleGoalExpanded(goal.id)}
-                        >
-                          <div className="flex items-center gap-2">
-                            <div className="text-xl">🎯</div>
-                            <div>
-                              <h3 className="font-medium text-gray-900">{goal.title}</h3>
-                              <div className="flex items-center gap-2 mt-1">
-                                <Progress
-                                  value={goal.progress || 0}
-                                  className="h-1.5 w-32 bg-gray-100"
-                                />
-                                <span className="text-xs text-gray-500">
-                                  {goal.progress || 0}% Complete
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <div
-                                  className={`px-2 py-1 cursor-pointer rounded-full text-sm ${
-                                    goal.complexity === 'high' ? 'bg-red-100 text-red-700 hover:bg-red-200' :
-                                    goal.complexity === 'medium' ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' :
-                                    goal.complexity === 'low' ? 'bg-green-100 text-green-700 hover:bg-green-200' :
-                                    'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                  }`}
-                                >
-                                  {goal.complexity === 'high' ? '😓 High Priority' : 
-                                   goal.complexity === 'medium' ? '😐 Medium Priority' : 
-                                   goal.complexity === 'low' ? '😌 Low Priority' : 
-                                   'Set Priority'}
-                                </div>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Set Goal Priority</DropdownMenuLabel>
-                                
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    apiRequest("PATCH", `/api/goals/${goal.id}`, {
-                                      complexity: 'high'
-                                    }).then(() => {
-                                      queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
-                                    }).catch(error => {
-                                      console.error("Error updating goal:", error);
-                                      toast({
-                                        title: "Error updating goal",
-                                        description: error.message,
-                                        variant: "destructive",
-                                      });
-                                    });
-                                  }}
-                                >
-                                  <span className="text-red-500 mr-2">😓</span> High Priority
-                                </DropdownMenuItem>
-                                
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    apiRequest("PATCH", `/api/goals/${goal.id}`, {
-                                      complexity: 'medium'
-                                    }).then(() => {
-                                      queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
-                                    }).catch(error => {
-                                      console.error("Error updating goal:", error);
-                                      toast({
-                                        title: "Error updating goal",
-                                        description: error.message,
-                                        variant: "destructive",
-                                      });
-                                    });
-                                  }}
-                                >
-                                  <span className="text-yellow-500 mr-2">😐</span> Medium Priority
-                                </DropdownMenuItem>
-                                
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    apiRequest("PATCH", `/api/goals/${goal.id}`, {
-                                      complexity: 'low'
-                                    }).then(() => {
-                                      queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
-                                    }).catch(error => {
-                                      console.error("Error updating goal:", error);
-                                      toast({
-                                        title: "Error updating goal",
-                                        description: error.message,
-                                        variant: "destructive",
-                                      });
-                                    });
-                                  }}
-                                >
-                                  <span className="text-green-500 mr-2">😌</span> Low Priority
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                            
-                            <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-200 border-0">
-                              {goal.tasks.filter(t => !t.completed).length} remaining
-                            </Badge>
-                            <div className="flex items-center">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-7 w-7"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeleteGoalId(goal.id);
-                                }}
-                              >
-                                <X className="h-4 w-4 text-gray-500 hover:text-red-500" />
-                              </Button>
-                              <Button variant="ghost" size="icon">
-                                {expandedGoals[goal.id] ? (
-                                  <ChevronDown className="h-5 w-5 text-gray-500" />
-                                ) : (
-                                  <ChevronRight className="h-5 w-5 text-gray-500" />
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Tasks */}
-                        {expandedGoals[goal.id] && (
-                          <div className="px-4 pb-4 pt-1 space-y-2 border-t">
-                            {/* Sort tasks by priority and completion status */}
-                            {[...goal.tasks]
-                              .sort((a, b) => {
-                                // First sort by completion status (incomplete first)
-                                if (a.completed !== b.completed) {
-                                  return a.completed ? 1 : -1;
-                                }
-                                
-                                // Then sort by complexity/priority if present (high priority first)
-                                const priorityOrder: Record<string, number> = { 
-                                  high: 0, // Changed to 0 to make high priority appear first
-                                  medium: 1, 
-                                  low: 2 
-                                };
-                                const aPriority = a.complexity ? priorityOrder[a.complexity] : 3;
-                                const bPriority = b.complexity ? priorityOrder[b.complexity] : 3;
-                                
-                                if (aPriority !== bPriority) {
-                                  return aPriority - bPriority;
-                                }
-                                
-                                // Then sort by due date if present
-                                if (a.dueDate && b.dueDate) {
-                                  return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-                                } else if (a.dueDate) {
-                                  return -1; // a has due date, b doesn't
-                                } else if (b.dueDate) {
-                                  return 1;  // b has due date, a doesn't
-                                }
-                                
-                                // Default to alphabetical
-                                return a.title.localeCompare(b.title);
-                              })
-                              .map(task => (
-                              <div 
-                                key={task.id}
-                                className={`p-3 flex items-start gap-3 rounded-md ${
-                                  task.completed 
-                                    ? 'bg-gray-50 text-gray-500' 
-                                    : 'bg-white hover:bg-gray-50'
+                      
+                      {task.subtasks && task.subtasks.length > 0 && (
+                        <div className="ml-8 mt-2 space-y-2">
+                          {task.subtasks.map(subtask => (
+                            <div key={subtask.id} className="flex items-center gap-2">
+                              <button
+                                onClick={() => toggleSubtaskCompletion.mutate({
+                                  goalId: task.goalId!,
+                                  taskId: task.id,
+                                  subtaskId: subtask.id,
+                                  completed: !subtask.completed
+                                })}
+                                className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                  subtask.completed 
+                                    ? "bg-green-100 border-green-500 text-green-500" 
+                                    : "border-gray-300 hover:border-purple-400"
                                 }`}
                               >
-                                <button 
-                                  className={`mt-0.5 h-5 w-5 rounded-full flex-shrink-0 flex items-center justify-center ${
-                                    task.completed 
-                                      ? 'bg-green-500 text-white' 
-                                      : 'border-2 border-purple-400'
-                                  }`}
-                                  onClick={() => {
-                                    toggleTaskCompletion.mutate({
-                                      goalId: goal.id,
-                                      taskId: task.id,
-                                      completed: !task.completed
-                                    });
-                                  }}
-                                >
-                                  {task.completed && (
-                                    <Check className="h-3 w-3" />
-                                  )}
-                                </button>
-                                
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex justify-between items-start">
-                                    <h4 className={`font-medium ${
-                                      task.completed ? 'line-through text-gray-400' : 'text-gray-800'
-                                    }`}>
-                                      {task.title}
-                                    </h4>
-                                    
-                                    <div className="flex items-center gap-1">
-                                      <div className="flex gap-1">
-                                        {task.dueDate && (
-                                          <Badge variant="outline" className={`text-xs gap-1 ${
-                                            task.completed 
-                                              ? 'border-gray-200 bg-gray-50 text-gray-400' 
-                                              : 'border-orange-200 bg-orange-50 text-orange-700'
-                                          }`}>
-                                            <Calendar className="h-3 w-3" />
-                                            {new Date(task.dueDate).toLocaleDateString()}
-                                          </Badge>
-                                        )}
-                                        
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <div
-                                              className={`px-2 py-0.5 text-xs cursor-pointer rounded-full ${
-                                                task.completed ? 'bg-gray-100 text-gray-500' :
-                                                task.complexity === 'high' ? 'bg-red-100 text-red-700 hover:bg-red-200' :
-                                                task.complexity === 'medium' ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' :
-                                                task.complexity === 'low' ? 'bg-green-100 text-green-700 hover:bg-green-200' :
-                                                'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                                              }`}
-                                              onClick={(e) => e.stopPropagation()}
-                                            >
-                                              {task.complexity === 'high' ? '😓 Hard' : 
-                                               task.complexity === 'medium' ? '😐 Medium' : 
-                                               task.complexity === 'low' ? '😌 Easy' :
-                                               '📋 Set Priority'}
-                                            </div>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="start">
-                                            <DropdownMenuLabel>Set Priority</DropdownMenuLabel>
-                                            <DropdownMenuItem
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                const updatedTasks = goal.tasks.map(t => {
-                                                  if (t.id === task.id) {
-                                                    return { ...t, complexity: 'high' };
-                                                  }
-                                                  return t;
-                                                });
-                                                
-                                                apiRequest("PATCH", `/api/goals/${goal.id}`, {
-                                                  tasks: updatedTasks
-                                                }).then(() => {
-                                                  queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
-                                                }).catch(error => {
-                                                  console.error("Error updating task:", error);
-                                                  toast({
-                                                    title: "Error updating task",
-                                                    description: error.message,
-                                                    variant: "destructive",
-                                                  });
-                                                });
-                                              }}
-                                            >
-                                              <span className="text-red-500 mr-2">😓</span> High Priority
-                                            </DropdownMenuItem>
-                                            
-                                            <DropdownMenuItem
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                const updatedTasks = goal.tasks.map(t => {
-                                                  if (t.id === task.id) {
-                                                    return { ...t, complexity: 'medium' };
-                                                  }
-                                                  return t;
-                                                });
-                                                
-                                                apiRequest("PATCH", `/api/goals/${goal.id}`, {
-                                                  tasks: updatedTasks
-                                                }).then(() => {
-                                                  queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
-                                                }).catch(error => {
-                                                  console.error("Error updating task:", error);
-                                                  toast({
-                                                    title: "Error updating task",
-                                                    description: error.message,
-                                                    variant: "destructive",
-                                                  });
-                                                });
-                                              }}
-                                            >
-                                              <span className="text-yellow-500 mr-2">😐</span> Medium Priority
-                                            </DropdownMenuItem>
-                                            
-                                            <DropdownMenuItem
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                const updatedTasks = goal.tasks.map(t => {
-                                                  if (t.id === task.id) {
-                                                    return { ...t, complexity: 'low' };
-                                                  }
-                                                  return t;
-                                                });
-                                                
-                                                apiRequest("PATCH", `/api/goals/${goal.id}`, {
-                                                  tasks: updatedTasks
-                                                }).then(() => {
-                                                  queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
-                                                }).catch(error => {
-                                                  console.error("Error updating task:", error);
-                                                  toast({
-                                                    title: "Error updating task",
-                                                    description: error.message,
-                                                    variant: "destructive",
-                                                  });
-                                                });
-                                              }}
-                                            >
-                                              <span className="text-green-500 mr-2">😌</span> Low Priority
-                                            </DropdownMenuItem>
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
-                                        
-                                        {task.estimatedMinutes && (
-                                          <Badge variant="outline" className={`text-xs gap-1 ${
-                                            task.completed 
-                                              ? 'border-gray-200 bg-gray-50 text-gray-400' 
-                                              : 'border-blue-200 bg-blue-50 text-blue-700'
-                                          }`}>
-                                            <Clock className="h-3 w-3" />
-                                            {task.estimatedMinutes} min
-                                          </Badge>
-                                        )}
-                                      </div>
-                                      
-                                      <div className="flex">
-                                        <Button 
-                                          variant="ghost" 
-                                          size="icon"
-                                          className="h-6 w-6"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setEditingTask({
-                                              goalId: goal.id,
-                                              taskId: task.id,
-                                              title: task.title
-                                            });
-                                          }}
-                                        >
-                                          <Edit className="h-3 w-3 text-gray-500" />
-                                        </Button>
-                                        <Button 
-                                          variant="ghost" 
-                                          size="icon"
-                                          className="h-6 w-6"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            // Remove the task from the goal
-                                            const updatedTasks = goal.tasks.filter(t => t.id !== task.id);
-                                            
-                                            // Update the goal with the tasks excluding the removed one
-                                            apiRequest("PATCH", `/api/goals/${goal.id}`, {
-                                              tasks: updatedTasks
-                                            }).then(() => {
-                                              queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
-                                              toast({
-                                                title: "🗑️ Task removed",
-                                                duration: 1500,
-                                              });
-                                            }).catch(error => {
-                                              toast({
-                                                title: "Error removing task",
-                                                description: error instanceof Error ? error.message : "Something went wrong",
-                                                variant: "destructive"
-                                              });
-                                            });
-                                          }}
-                                        >
-                                          <X className="h-3 w-3 text-gray-500" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  
-                                  {task.subtasks && task.subtasks.length > 0 && !task.completed && (
-                                    <div className="mt-2 space-y-1">
-                                      {task.subtasks.map(subtask => (
-                                        <div key={subtask.id} className="flex items-center gap-2">
-                                          <button 
-                                            className="w-3.5 h-3.5 border border-gray-300 rounded-sm flex items-center justify-center"
-                                            onClick={() => {
-                                              toggleSubtaskCompletion.mutate({
-                                                goalId: goal.id,
-                                                taskId: task.id,
-                                                subtaskId: subtask.id,
-                                                completed: !subtask.completed
-                                              });
-                                            }}
-                                          >
-                                            {subtask.completed && (
-                                              <Check className="h-2.5 w-2.5 text-purple-600" />
-                                            )}
-                                          </button>
-                                          <span className={`text-xs ${subtask.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
-                                            {subtask.title}
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                            
-                            <Button 
-                              variant="outline" 
-                              className="w-full text-xs mt-2"
-                              onClick={() => {
-                                setChatOpen(true);
-                                setInput(`I want to add more tasks to my goal: "${goal.title}"`);
-                              }}
-                            >
-                              <Plus className="h-3.5 w-3.5 mr-1" />
-                              Add more tasks
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                                {subtask.completed && <Check className="h-3 w-3" />}
+                              </button>
+                              <span className={`text-sm ${subtask.completed ? "line-through text-gray-400" : ""}`}>
+                                {subtask.title}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-white rounded-lg p-8 text-center border">
+                    <div className="text-5xl mb-4">🎉</div>
+                    <h3 className="text-xl font-medium mb-2">All caught up!</h3>
+                    <p className="text-gray-500 mb-4">You've completed all your tasks for today.</p>
+                    <Button onClick={() => setGoalModalOpen(true)}>Create a new goal</Button>
                   </div>
                 )}
               </div>
             </TabsContent>
             
-            {/* Completed tab */}
-            <TabsContent value="completed" className="mt-0">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-gray-800">Completed Tasks ✅</h2>
+            {/* Goals View */}
+            <TabsContent value="goals" className="space-y-4">
+              {isLoadingGoals ? (
+                <div className="flex justify-center items-center p-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
                 </div>
-                
-                {isLoadingGoals ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {goals.flatMap(goal => 
-                      goal.tasks
-                        .filter(task => task.completed)
+              ) : goals.length > 0 ? (
+                goals.map((goal) => (
+                  <div 
+                    key={goal.id}
+                    id={`goal-${goal.id}`}
+                    className="bg-white rounded-lg shadow-sm border overflow-hidden transition-all hover:shadow-md"
+                  >
+                    <div className="p-4 border-b bg-gray-50">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="text-lg font-medium">{goal.title}</h3>
+                        <Badge 
+                          variant={
+                            (goal.progress || 0) === 100 
+                              ? "success" 
+                              : (goal.progress || 0) > 50 
+                                ? "default" 
+                                : "outline"
+                          }
+                        >
+                          {(goal.progress || 0).toFixed(0)}% Complete
+                        </Badge>
+                      </div>
+                      <Progress 
+                        value={goal.progress || 0} 
+                        className="h-2" 
+                      />
+                    </div>
+                    
+                    <div className="divide-y">
+                      {goal.tasks
+                        .sort((a, b) => {
+                          // Sort completed tasks to the bottom
+                          if (a.completed !== b.completed) {
+                            return a.completed ? 1 : -1;
+                          }
+                          
+                          // Then sort by priority
+                          const priorityOrder = { high: 0, medium: 1, low: 2 };
+                          return (
+                            (priorityOrder[a.complexity?.toLowerCase() as keyof typeof priorityOrder] || 3) -
+                            (priorityOrder[b.complexity?.toLowerCase() as keyof typeof priorityOrder] || 3)
+                          );
+                        })
                         .map(task => (
                           <div 
                             key={task.id}
-                            className="bg-white border rounded-lg p-3 flex items-start gap-3"
+                            className={`p-3 ${task.completed ? "bg-gray-50" : ""}`}
                           >
-                            <div className="mt-0.5 h-5 w-5 rounded-full bg-green-500 text-white flex-shrink-0 flex items-center justify-center">
-                              <Check className="h-3 w-3" />
-                            </div>
-                            
-                            <div className="flex-1 min-w-0">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <h3 className="font-medium text-gray-600 line-through">{task.title}</h3>
-                                  <p className="text-xs text-gray-400">
-                                    From: {goal.title}
-                                  </p>
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => toggleTaskCompletion.mutate({
+                                  goalId: goal.id,
+                                  taskId: task.id,
+                                  completed: !task.completed
+                                })}
+                                className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                  task.completed 
+                                    ? "bg-green-100 border-green-500 text-green-500" 
+                                    : "border-gray-300 hover:border-purple-400"
+                                }`}
+                              >
+                                {task.completed && <Check className="h-4 w-4" />}
+                              </button>
+                              
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-lg">{getPriorityEmoji(task.complexity)}</span>
+                                  <span className={`${task.completed ? "line-through text-gray-400" : "font-medium"}`}>
+                                    {task.title}
+                                  </span>
                                 </div>
                                 
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  className="h-7 text-xs text-gray-500"
-                                  onClick={() => {
-                                    toggleTaskCompletion.mutate({
-                                      goalId: goal.id,
-                                      taskId: task.id,
-                                      completed: false
-                                    });
-                                  }}
-                                >
-                                  Reopen
-                                </Button>
+                                {task.estimatedMinutes && (
+                                  <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                                    <Clock className="h-3 w-3" />
+                                    <span>
+                                      {task.estimatedMinutes} min
+                                    </span>
+                                  </div>
+                                )}
                               </div>
+                              
+                              <TaskOptionsDropdown 
+                                goalId={goal.id} 
+                                taskId={task.id}
+                                onDiscuss={() => {
+                                  setSelectedTask({
+                                    goalId: goal.id,
+                                    taskId: task.id,
+                                    title: task.title
+                                  });
+                                  setTaskModalOpen(true);
+                                }}
+                              />
                             </div>
+                            
+                            {/* Subtasks */}
+                            {task.subtasks && task.subtasks.length > 0 && !task.completed && (
+                              <div className="ml-9 mt-2 space-y-2">
+                                {task.subtasks.map(subtask => (
+                                  <div key={subtask.id} className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => toggleSubtaskCompletion.mutate({
+                                        goalId: goal.id,
+                                        taskId: task.id,
+                                        subtaskId: subtask.id,
+                                        completed: !subtask.completed
+                                      })}
+                                      className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                        subtask.completed 
+                                          ? "bg-green-100 border-green-500 text-green-500" 
+                                          : "border-gray-300 hover:border-purple-400"
+                                      }`}
+                                    >
+                                      {subtask.completed && <Check className="h-3 w-3" />}
+                                    </button>
+                                    <span className={`text-sm ${subtask.completed ? "line-through text-gray-400" : ""}`}>
+                                      {subtask.title}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        ))
-                    )}
-                    
-                    {goals.flatMap(goal => 
-                      goal.tasks.filter(task => task.completed)
-                    ).length === 0 && (
-                      <div className="bg-white border rounded-lg p-6 text-center">
-                        <div className="text-4xl mb-3">📝</div>
-                        <h3 className="text-lg font-medium text-gray-800 mb-1">No completed tasks yet</h3>
-                        <p className="text-gray-600">
-                          Check out your tasks and start completing them!
-                        </p>
-                      </div>
-                    )}
+                        ))}
+                    </div>
                   </div>
-                )}
-              </div>
+                ))
+              ) : (
+                <div className="bg-white rounded-lg p-8 text-center border">
+                  <div className="text-5xl mb-4">🎯</div>
+                  <h3 className="text-xl font-medium mb-2">No goals yet</h3>
+                  <p className="text-gray-500 mb-4">Create your first goal to get started.</p>
+                  <Button onClick={() => setGoalModalOpen(true)}>Create a new goal</Button>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>
       </div>
       
-      {/* Delete Goal Confirmation */}
-      <Dialog open={deleteGoalId !== null} onOpenChange={(open) => !open && setDeleteGoalId(null)}>
-        <DialogContent className="sm:max-w-[450px]">
-          <DialogTitle className="text-center">Confirm Deletion</DialogTitle>
-          <div className="py-3">
-            <p className="text-gray-600 mb-4">
-              Are you sure you want to delete this goal? All tasks associated with this goal will also be deleted. This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setDeleteGoalId(null)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                variant="destructive"
-                onClick={() => deleteGoalId && deleteGoal.mutate(deleteGoalId)}
-                disabled={deleteGoal.isPending}
-              >
-                {deleteGoal.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  'Delete Goal'
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Edit Task Dialog */}
-      <Dialog open={editingTask !== null} onOpenChange={(open) => !open && setEditingTask(null)}>
-        <DialogContent className="sm:max-w-[450px]">
-          <DialogTitle>Edit Task</DialogTitle>
-          <div className="py-3">
-            {editingTask && (
-              <form 
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (editingTask.title.trim() === "") return;
-                  
-                  editTask.mutate({
-                    goalId: editingTask.goalId,
-                    taskId: editingTask.taskId,
-                    title: editingTask.title
-                  });
-                }}
-              >
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Input 
-                      value={editingTask.title}
-                      onChange={(e) => setEditingTask({
-                        ...editingTask,
-                        title: e.target.value
-                      })}
-                      placeholder="Task title"
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      type="button"
-                      variant="outline" 
-                      onClick={() => setEditingTask(null)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      type="submit"
-                      disabled={!editingTask.title.trim() || editTask.isPending}
-                    >
-                      {editTask.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        'Save Changes'
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </form>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-        
-      {/* Chat dialog */}
+      {/* Chat Dialog */}
       <Dialog open={chatOpen} onOpenChange={setChatOpen}>
-        <DialogContent className="sm:max-w-[500px] p-0 gap-0 max-h-[80vh] flex flex-col">
-          <div className="p-4 border-b flex justify-between items-center">
-            <DialogTitle>Chat with AI Coach</DialogTitle>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setChatOpen(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+        <DialogContent className="sm:max-w-[425px] h-[80vh] flex flex-col p-0 gap-0">
+          <DialogTitle className="p-4 border-b text-xl font-semibold flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-purple-500" />
+            AI Task Coach
+          </DialogTitle>
           
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"} items-end gap-2`}
-              >
-                {message.sender === "ai" && (
-                  <Avatar className="h-8 w-8 flex-shrink-0">
-                    <AvatarFallback className="bg-purple-600">🤖</AvatarFallback>
-                  </Avatar>
-                )}
-                
-                <div 
-                  className={`
-                    max-w-[85%] rounded-lg px-4 py-3
-                    ${message.sender === "user" 
-                      ? "bg-purple-600 text-white" 
-                      : "bg-gray-100 text-gray-800"
-                    }
-                  `}
+            <AnimatePresence initial={false}>
+              {messages.map((message) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
                 >
-                  <div>
-                    <div className="prose prose-sm">
-                      {message.content.split('\n').map((line, i) => (
-                        <React.Fragment key={i}>
-                          {line}
-                          {i < message.content.split('\n').length - 1 && <br />}
-                        </React.Fragment>
-                      ))}
-                    </div>
-                    
-                    {/* If this message created a goal, show a special indicator */}
-                    {message.isTaskCreation && message.goalId !== undefined && (
-                      <div className="mt-2 pt-2 border-t border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-1.5 rounded-full bg-green-500"></div>
-                          <span className="text-xs font-medium text-gray-600">
-                            Tasks created successfully!
-                          </span>
-                        </div>
+                  <div 
+                    className={`max-w-[80%] p-3 rounded-lg relative ${
+                      message.sender === "user" 
+                        ? "bg-purple-100 text-purple-900" 
+                        : "bg-white border"
+                    }`}
+                  >
+                    {message.sender === "ai" && (
+                      <div className="flex items-center gap-2 mb-1">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src="/robot.png" />
+                          <AvatarFallback>AI</AvatarFallback>
+                        </Avatar>
+                        <span className="text-xs font-semibold text-purple-700">AI Coach</span>
                       </div>
                     )}
+                    
+                    <div className="text-sm whitespace-pre-wrap">
+                      {message.content}
+                    </div>
+                    
+                    <div className="text-[10px] text-gray-500 mt-1 text-right">
+                      {formatTimestamp(message.timestamp)}
+                    </div>
+                    
+                    {message.isTaskCreation && message.goalId && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-2 text-xs"
+                        onClick={() => handleTaskClick(message.goalId!)}
+                      >
+                        View Tasks
+                      </Button>
+                    )}
                   </div>
-                  
-                  <div className="mt-1 text-right">
-                    <span className="text-xs opacity-60">
-                      {message.timestamp.toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
-                    </span>
+                </motion.div>
+              ))}
+              
+              {isTyping && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex justify-start"
+                >
+                  <div className="max-w-[80%] p-3 rounded-lg bg-white border">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src="/robot.png" />
+                        <AvatarFallback>AI</AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs font-semibold text-purple-700">AI Coach</span>
+                    </div>
+                    <div className="flex gap-1">
+                      <div className="h-2 w-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                      <div className="h-2 w-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                      <div className="h-2 w-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                    </div>
                   </div>
-                </div>
-                
-                {message.sender === "user" && (
-                  <Avatar className="h-8 w-8 flex-shrink-0">
-                    <AvatarImage src={user?.profilePicture || undefined} alt={user?.username || "User"} />
-                    <AvatarFallback className="bg-gradient-to-br from-purple-600 to-indigo-600 text-white">
-                      {user?.username?.charAt(0)?.toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-              </div>
-            ))}
-            
-            {/* AI typing indicator */}
-            {isTyping && (
-              <div className="flex justify-start items-end gap-2">
-                <Avatar className="h-8 w-8 flex-shrink-0">
-                  <AvatarFallback className="bg-purple-600">🤖</AvatarFallback>
-                </Avatar>
-                <div className="bg-gray-100 rounded-lg px-4 py-3">
-                  <div className="flex space-x-1">
-                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0s" }} />
-                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
-                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }} />
-                  </div>
-                </div>
-              </div>
-            )}
-            
+                </motion.div>
+              )}
+            </AnimatePresence>
             <div ref={messagesEndRef} />
           </div>
           
-          <div className="p-4 border-t">
-            <form onSubmit={handleSubmit} className="relative">
-              <Textarea
+          <div className="p-3 border-t">
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (input.trim()) {
+                  sendMessage.mutate(input.trim());
+                }
+              }}
+              className="flex gap-2"
+            >
+              <Input 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={newGoalMode 
-                  ? "Describe your goal in detail..." 
-                  : "Ask a question or discuss your tasks..."}
-                className="pr-10 min-h-[80px] resize-none"
-                autoFocus
+                placeholder="Type your message..."
+                className="flex-1"
               />
               <Button 
                 type="submit" 
-                size="icon" 
-                className="absolute right-2 bottom-2 bg-purple-600 hover:bg-purple-700 text-white"
-                disabled={isTyping || input.trim() === ""}
+                size="icon"
+                disabled={!input.trim() || isTyping}
               >
                 <Send className="h-4 w-4" />
               </Button>
             </form>
-            
-            {newGoalMode && (
-              <div className="mt-2 text-xs text-gray-500 flex items-center gap-1.5">
-                <AlertCircle className="h-3 w-3" />
-                Be specific about what you want to achieve and any timeframes
-              </div>
-            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* New Goal Modal */}
+      <Dialog open={goalModalOpen} onOpenChange={setGoalModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogTitle>Create New Goal</DialogTitle>
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (goalDescription.trim()) {
+                createGoal.mutate(goalDescription.trim());
+              }
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <Textarea 
+                value={goalDescription}
+                onChange={(e) => setGoalDescription(e.target.value)}
+                placeholder="Describe your goal... (e.g., 'I want to learn Spanish in 3 months')"
+                className="h-32"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={() => setGoalModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={!goalDescription.trim()}
+              >
+                Create Goal
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Task Discussion Modal */}
+      <Dialog open={taskModalOpen} onOpenChange={setTaskModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogTitle>Discuss Task</DialogTitle>
+          <div className="mb-4">
+            <h3 className="font-medium">{selectedTask?.title}</h3>
+            <p className="text-sm text-gray-500">
+              What would you like to know about this task?
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start text-left"
+              onClick={() => {
+                if (selectedTask) {
+                  setChatOpen(true);
+                  setTaskModalOpen(false);
+                  setInput(`How can I approach the task "${selectedTask.title}"?`);
+                  setTimeout(() => {
+                    const form = document.querySelector("form");
+                    if (form) form.dispatchEvent(new Event("submit", { cancelable: true }));
+                  }, 500);
+                }
+              }}
+            >
+              How can I approach this task?
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start text-left"
+              onClick={() => {
+                if (selectedTask) {
+                  setChatOpen(true);
+                  setTaskModalOpen(false);
+                  setInput(`I'm stuck on "${selectedTask.title}". What should I do?`);
+                  setTimeout(() => {
+                    const form = document.querySelector("form");
+                    if (form) form.dispatchEvent(new Event("submit", { cancelable: true }));
+                  }, 500);
+                }
+              }}
+            >
+              I'm stuck on this task
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start text-left"
+              onClick={() => {
+                if (selectedTask) {
+                  setChatOpen(true);
+                  setTaskModalOpen(false);
+                  setInput(`Break down "${selectedTask.title}" into smaller steps`);
+                  setTimeout(() => {
+                    const form = document.querySelector("form");
+                    if (form) form.dispatchEvent(new Event("submit", { cancelable: true }));
+                  }, 500);
+                }
+              }}
+            >
+              Break this down into smaller steps
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
     </div>
   );
-};
-
-export default TaskFocusedApp;
+}
