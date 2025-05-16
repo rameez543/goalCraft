@@ -576,14 +576,14 @@ export default function TaskFocusedApp() {
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Main task area */}
-        <div className="flex-1 overflow-y-auto p-4 bg-transparent backdrop-blur-[2px]">
-          <Tabs defaultValue="today" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <TabsList className="bg-white/80 backdrop-blur border shadow-sm rounded-full">
-                <TabsTrigger value="today" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-full">
+        <div className="flex-1 overflow-y-auto p-4 bg-transparent backdrop-blur-sm">
+          <Tabs defaultValue="today" className="space-y-5">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
+              <TabsList className="bg-white/90 backdrop-blur-md border border-purple-100 shadow-sm rounded-full w-full sm:w-auto">
+                <TabsTrigger value="today" className="flex-1 sm:flex-initial data-[state=active]:gradient-primary data-[state=active]:text-white rounded-full">
                   ⚡ Today
                 </TabsTrigger>
-                <TabsTrigger value="goals" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-full">
+                <TabsTrigger value="goals" className="flex-1 sm:flex-initial data-[state=active]:gradient-primary data-[state=active]:text-white rounded-full">
                   🎯 My Goals
                 </TabsTrigger>
               </TabsList>
@@ -611,7 +611,7 @@ export default function TaskFocusedApp() {
                   todaysTasks.map(task => (
                     <div
                       key={`${task.goalId}-${task.id}`}
-                      className="bg-white/90 backdrop-blur rounded-xl shadow-sm border p-3 sm:p-4 transition-all hover:shadow-md hover:translate-y-[-2px]"
+                      className="task-card p-3 sm:p-4"
                     >
                       <div className="flex items-center gap-3 mb-2">
                         <button
