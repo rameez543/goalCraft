@@ -89,9 +89,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       
       setMessages(prev => [...prev, coachMessage]);
       
-      // If new tasks were created, refresh goals data
+      // If new tasks were created or goals were modified, fetch new data without navigation
       if (data.tasksCreated) {
-        queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+        // Use refetchQueries instead of invalidateQueries to prevent navigation
+        queryClient.refetchQueries({ 
+          queryKey: ['/api/goals'],
+          type: 'active' 
+        });
       }
     },
     onError: (error) => {
