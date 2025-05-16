@@ -79,6 +79,12 @@ export default function TaskFocusedApp() {
   const [deleteGoalId, setDeleteGoalId] = useState<number | null>(null);
   const [deleteGoalModalOpen, setDeleteGoalModalOpen] = useState(false);
   
+  // Add task state
+  const [addTaskGoalId, setAddTaskGoalId] = useState<number | null>(null);
+  const [addTaskTitle, setAddTaskTitle] = useState("");
+  const [addTaskModalOpen, setAddTaskModalOpen] = useState(false);
+  const [addTaskComplexity, setAddTaskComplexity] = useState<"low" | "medium" | "high">("medium");
+  
   // Conversation history for AI context retention
   const [conversationHistory, setConversationHistory] = useState<
     Array<{ role: 'user' | 'assistant'; content: string }>
@@ -365,6 +371,47 @@ export default function TaskFocusedApp() {
       toast({
         title: "Error",
         description: "Failed to create goal",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Add task mutation
+  const addTask = useMutation({
+    mutationFn: async ({ goalId, title, complexity }: { goalId: number, title: string, complexity: string }) => {
+      // Create a unique ID for the new task
+      const taskId = `task-${Date.now()}`;
+      
+      return await apiRequest("PATCH", `/api/goals/${goalId}`, {
+        tasks: [
+          {
+            id: taskId,
+            title,
+            complexity,
+            completed: false,
+            subtasks: []
+          }
+        ]
+      });
+    },
+    onSuccess: async () => {
+      setAddTaskTitle("");
+      setAddTaskGoalId(null);
+      setAddTaskModalOpen(false);
+      
+      toast({
+        title: "Task added",
+        description: "Your task has been added to the goal",
+      });
+      
+      // Refresh goals data
+      await queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
+    },
+    onError: (error) => {
+      console.error("Error adding task:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add task",
         variant: "destructive"
       });
     }
