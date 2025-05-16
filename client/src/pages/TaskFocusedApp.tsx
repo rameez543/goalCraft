@@ -423,7 +423,9 @@ const TaskFocusedApp = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Main task area */}
         <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-          <Tabs defaultValue="today" className="space-y-4">
+          <Tabs value={activeTabRef.current || "today"} onValueChange={(value) => {
+              activeTabRef.current = value;
+            }} className="space-y-4">
             <div className="flex justify-between items-center">
               <TabsList className="bg-white border">
                 <TabsTrigger value="today" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700">
